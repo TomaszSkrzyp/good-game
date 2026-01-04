@@ -1,0 +1,8 @@
+*.exe
+*.out
+
+node_modules/
+dist/
+.env
+
+.vscode/

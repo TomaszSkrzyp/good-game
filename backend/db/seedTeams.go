@@ -7,28 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-func SeedConferences(db *gorm.DB) {
-	var easternConference models.Conference
-	easternConference = models.Conference{
-		Name: "Eastern Conference",
-	}
-	if err := db.Create(&easternConference).Error; err != nil {
-		fmt.Println("Failed to seed Eastern Conference:", err)
-	} else {
-		fmt.Println("Seeded Eastern Conference")
-	}
-
-	var westernConference models.Conference
-	westernConference = models.Conference{
-		Name: "Western Conference",
-	}
-	if err := db.Create(&westernConference).Error; err != nil {
-		fmt.Println("Failed to seed Western Conference:", err)
-	} else {
-		fmt.Println("Seeded Western Conference")
-	}
-}
-
 func BuildConferenceMap(db *gorm.DB) error {
 	r := NewConferenceRepository(db)
 	m, err := r.NameToIDMap()

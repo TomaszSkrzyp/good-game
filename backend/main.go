@@ -48,7 +48,6 @@ func main() {
 	gormDB := initDB()
 	db.SeedRoles(gormDB)
 	db.SeedAdminUser(gormDB)
-	db.SeedConferences(gormDB)
 	err := db.BuildConferenceMap(gormDB)
 	if err != nil {
 		log.Fatalf("Failed to build conference map: %v", err)

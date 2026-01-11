@@ -6,77 +6,59 @@ import (
 	"net/http"
 	"os"
 
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-
 	"github.com/tomaszSkrzyp/good-game/db"
-	"github.com/tomaszSkrzyp/good-game/models"
+	"github.com/tomaszSkrzyp/good-game/fetch"
 	"github.com/tomaszSkrzyp/good-game/routes"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
-
-func initDB() *gorm.DB {
-	// SQLite file will be created in the project folder
-	dbConn, err := gorm.Open(sqlite.Open("goodgame.db"), &gorm.Config{})
-	if err != nil {
-		log.Fatalf("Failed to connect to SQLite: %v", err)
-	}
-
-	// Auto-migrate your models
-	err = dbConn.AutoMigrate(
-		&models.User{},
-		&models.Role{},
-		&models.Game{},
-		&models.Team{},
-		&models.Conference{},
-		&models.TeamStats{},
-		&models.UserReaction{},
-	)
-	if err != nil {
-		log.Fatalf("AutoMigrate failed: %v", err)
-	}
-
-	fmt.Println("SQLite database connected and migrated")
-	return dbConn
-}
 
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-
-	gormDB := initDB()
-	db.SeedRoles(gormDB)
-	db.SeedAdminUser(gormDB)
-	err := db.BuildConferenceMap(gormDB)
-	if err != nil {
-		log.Fatalf("Failed to build conference map: %v", err)
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		log.Fatalf("error: database_url variable has not been set .env")
 	}
-	db.SeedTeams(gormDB)
-	err = db.BuildTeamMap(gormDB)
+
+	gormDB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatalf("Failed to build team map: %v", err)
+		log.Fatalf("failed to connect to database: %v", err)
 	}
-	// register routes by concern
-	http.HandleFunc("/health", healthHandler)
 
-	routes.RegisterConferenceRoutes(gormDB)
-	routes.RegisterTeamRoutes(gormDB)
-	routes.RegisterAuthRoutes(gormDB)
-	routes.RegisterGameRoutes(gormDB)
-	routes.RegisterTeamStatsRoutes(gormDB)
-	routes.RegisterUserReactionRoutes(gormDB)
+	db.Initialize(gormDB)
 
-	fmt.Printf("Server running on port: %s\n", port)
-	err = http.ListenAndServe(":"+port, nil)
+	// check if we have enough arguments for cli commands
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "--fetch-season":
+			log.Println("starting full season fetch...")
+			if err := fetch.FetchFullSeason(gormDB, 2025); err != nil {
+				log.Fatalf("fetch failed: %v", err)
+			}
+			log.Println("fetch completed successfully.")
+			os.Exit(0) // exit immediately
 
-	if err != nil {
-		log.Fatalf("Server failed to start: %v", err)
+		case "--fetch-date":
+			if len(os.Args) < 3 {
+				log.Fatalf("error: --fetch-date requires a date argument (yyyy-mm-dd)")
+			}
+			date := os.Args[2]
+			log.Printf("updating games for: %s", date)
+			if err := fetch.FetchGamesByDate(gormDB, date); err != nil {
+				log.Fatalf("update failed: %v", err)
+			}
+			log.Println("update completed successfully.")
+			os.Exit(0) // exit immediately
+		}
 	}
-}
 
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"ok"}`))
+	// if no fetch flags were matched, start the web server
+	router := routes.NewRouter(gormDB)
+	fmt.Printf("Server running on: http://localhost:%s\n", port)
+	if err := http.ListenAndServe(":"+port, router); err != nil {
+		log.Fatalf("server failed to start: %v", err)
+	}
 }

@@ -12,10 +12,6 @@ type UserReactionService struct {
 func NewUserReactionService(r *db.UserReactionRepository) *UserReactionService {
 	return &UserReactionService{repo: r}
 }
-
-func (s *UserReactionService) Create(ur *models.UserReaction) error {
-	return s.repo.Create(ur)
-}
 func (s *UserReactionService) GetByID(id uint) (*models.UserReaction, error) {
 	return s.repo.GetByID(id)
 }
@@ -28,9 +24,13 @@ func (s *UserReactionService) Delete(id uint) error {
 func (s *UserReactionService) Filter(userID, gameID uint, liked *int, page, limit int) ([]models.UserReaction, error) {
 	return s.repo.Filter(userID, gameID, liked, page, limit)
 }
-func (s *UserReactionService) GetAverageForGame(gameID uint) (float64, error) {
-	return s.repo.GetAverageForGame(gameID)
+func (s *UserReactionService) GetAverageAndCountForGame(gameID uint) (float64, int64, error) {
+	return s.repo.GetStatsForGame(gameID)
 }
-func (s *UserReactionService) GetAverageForTeam(teamID uint) (float64, error) {
-	return s.repo.GetAverageForTeam(teamID)
+
+func (s *UserReactionService) GetAverageAndCountForTeam(teamID uint) (float64, int64, error) {
+	return s.repo.GetStatsForTeam(teamID)
+}
+func (s *UserReactionService) UpdateOrCreate(ur *models.UserReaction) error {
+	return s.repo.UpdateOrCreate(ur)
 }

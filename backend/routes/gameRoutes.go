@@ -3,38 +3,37 @@ package routes
 import (
 	"net/http"
 
-	"gorm.io/gorm"
-
 	"github.com/tomaszSkrzyp/good-game/db"
 	"github.com/tomaszSkrzyp/good-game/handlers"
 	"github.com/tomaszSkrzyp/good-game/services"
+	"gorm.io/gorm"
 )
 
-func RegisterGameRoutes(gormDB *gorm.DB) {
-	gameRepo := db.NewGameRepository(gormDB)
-	gameService := services.NewGameService(gameRepo)
+func RegisterGameRoutes(mux *http.ServeMux, gormDB *gorm.DB) {
+	repo := db.NewGameRepository(gormDB)
+	svc := services.NewGameService(repo)
 
-	http.HandleFunc("/games", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/games", handlers.OptionalAuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			handlers.FilterGame(w, r, gameService)
+			handlers.FilterGames(w, r, svc)
 		case http.MethodPost:
-			handlers.CreateGame(w, r, gameService)
+			handlers.CreateGame(w, r, svc)
 		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
-	})
+	}))
 
-	http.HandleFunc("/game", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/game", handlers.OptionalAuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			handlers.GetGameByID(w, r, gameService)
+			handlers.GetGameByID(w, r, svc)
 		case http.MethodPut:
-			handlers.UpdateGame(w, r, gameService)
+			handlers.UpdateGame(w, r, svc)
 		case http.MethodDelete:
-			handlers.DeleteGame(w, r, gameService)
+			handlers.DeleteGame(w, r, svc)
 		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
-	})
+	}))
 }

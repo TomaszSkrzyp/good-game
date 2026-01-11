@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: gg-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: gg-backend
+    restart: always
+    env_file: ./.env
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "host=db user=${DB_USER} password=${DB_PASSWORD} dbname=${DB_NAME} port=5432 sslmode=disable"
+
+  frontend:
+    build: ./frontend
+    container_name: gg-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+  # cronjob updating the games of "yesterday" and "today". fired every hour
+  updater:
+    build: ./backend
+    container_name: gg-updater
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: ./.env
+    environment:
+      DATABASE_URL: "host=db user=${DB_USER} password=${DB_PASSWORD} dbname=${DB_NAME} port=5432 sslmode=disable"
+    entrypoint: >
+      sh -c "while true; do
+      echo 'Fetching yesterday and today...';
+      ./main --fetch-date $$(date -d \"@$$(($$(date +%s) - 86400))\" +%Y-%m-%d);
+      ./main --fetch-date $$(date +%Y-%m-%d);
+      sleep 3600;
+      done"

@@ -3,30 +3,29 @@ package routes
 import (
 	"net/http"
 
-	"gorm.io/gorm"
-
 	"github.com/tomaszSkrzyp/good-game/db"
 	"github.com/tomaszSkrzyp/good-game/handlers"
 	"github.com/tomaszSkrzyp/good-game/services"
+	"gorm.io/gorm"
 )
 
-func RegisterTeamRoutes(gormDB *gorm.DB) {
-	teamRepo := db.NewTeamRepository(gormDB)
-	teamService := services.NewTeamService(teamRepo)
+func RegisterTeamRoutes(mux *http.ServeMux, gormDB *gorm.DB) {
+	repo := db.NewTeamRepository(gormDB)
+	svc := services.NewTeamService(repo)
 
-	http.HandleFunc("/teams", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/teams", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed")
 			return
 		}
-		handlers.FilterTeams(w, r, teamService)
+		handlers.FilterTeams(w, r, svc)
 	})
 
-	http.HandleFunc("/team", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/team", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed")
 			return
 		}
-		handlers.GetTeamByID(w, r, teamService)
+		handlers.GetTeamByID(w, r, svc)
 	})
 }

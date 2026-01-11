@@ -8,15 +8,19 @@
     "build": "vite build",
     "preview": "vite preview"
   },
-
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@solidjs/router": "^0.15.4",
+    "@tailwindcss/vite": "^4.1.18",
     "solid-js": "^1.9.10"
   },
   "devDependencies": {
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.0",

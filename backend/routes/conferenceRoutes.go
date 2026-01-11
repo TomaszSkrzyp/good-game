@@ -3,30 +3,29 @@ package routes
 import (
 	"net/http"
 
-	"gorm.io/gorm"
-
 	"github.com/tomaszSkrzyp/good-game/db"
 	"github.com/tomaszSkrzyp/good-game/handlers"
 	"github.com/tomaszSkrzyp/good-game/services"
+	"gorm.io/gorm"
 )
 
-func RegisterConferenceRoutes(gormDB *gorm.DB) {
-	confRepo := db.NewConferenceRepository(gormDB)
-	confService := services.NewConferenceService(confRepo)
+func RegisterConferenceRoutes(mux *http.ServeMux, gormDB *gorm.DB) {
+	repo := db.NewConferenceRepository(gormDB)
+	svc := services.NewConferenceService(repo)
 
-	http.HandleFunc("/conferences", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/conferences", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed")
 			return
 		}
-		handlers.ListConferences(w, r, confService)
+		handlers.ListConferences(w, r, svc)
 	})
 
-	http.HandleFunc("/conference", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/conference", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed")
 			return
 		}
-		handlers.GetConferenceByID(w, r, confService)
+		handlers.GetConferenceByID(w, r, svc)
 	})
 }

@@ -38,13 +38,25 @@ func (r *GameRepository) Delete(id uint) error {
 	}
 	return res.Error
 }
-
-func (r *GameRepository) Filter(date string, homeID *uint, awayID *uint, minRating *int, maxRating *int, sort string, page int, limit int) ([]models.Game, error) {
+func (r *GameRepository) Filter(date string, homeID *uint, awayID *uint, minRating *int, maxRating *int, sort string, page int, limit int, userID uint) ([]models.Game, error) {
 	var games []models.Game
-	query := r.db.Model(&models.Game{})
 
+	// select games with subqueries for stats and user-specific rating
+	selectQuery := "games.*, " +
+		"(SELECT COALESCE(AVG(liked), 0) FROM user_reactions WHERE game_id = games.id) as avg_rating, " +
+		"(SELECT COUNT(*) FROM user_reactions WHERE user_reactions.game_id = games.id) as rating_count"
+
+	if userID > 0 {
+		selectQuery += ", (SELECT liked FROM user_reactions WHERE game_id = games.id AND user_id = ? LIMIT 1) as rating"
+	} else {
+		selectQuery += ", NULL as rating"
+	}
+
+	query := r.db.Model(&models.Game{}).Select(selectQuery, userID)
+
+	// basic game filters
 	if date != "" {
-		query = query.Where("date = ?", date)
+		query = query.Where("date(game_time) = ?", date)
 	}
 	if homeID != nil {
 		query = query.Where("home_team_id = ?", *homeID)
@@ -52,20 +64,29 @@ func (r *GameRepository) Filter(date string, homeID *uint, awayID *uint, minRati
 	if awayID != nil {
 		query = query.Where("away_team_id = ?", *awayID)
 	}
-	if minRating != nil {
-		query = query.Where("rating >= ?", *minRating)
-	}
-	if maxRating != nil {
-		query = query.Where("rating <= ?", *maxRating)
+
+	// rating filters only for authenticated users
+	if userID > 0 {
+		if minRating != nil {
+			query = query.Where("EXISTS (SELECT 1 FROM user_reactions WHERE game_id = games.id AND user_id = ? AND liked >= ?)", userID, *minRating)
+		}
+		if maxRating != nil {
+			query = query.Where("EXISTS (SELECT 1 FROM user_reactions WHERE game_id = games.id AND user_id = ? AND liked <= ?)", userID, *maxRating)
+		}
 	}
 
 	if sort != "" {
 		query = query.Order(sort)
 	}
 
-	offset := (page - 1) * limit
-	if err := query.Offset(offset).Limit(limit).Find(&games).Error; err != nil {
-		return nil, err
-	}
-	return games, nil
+	// fetch with preloading and pagination
+	err := query.
+		Preload("HomeTeam").
+		Preload("AwayTeam").
+		Offset((page - 1) * limit).
+		Limit(limit).
+		Find(&games).
+		Error
+
+	return games, err
 }

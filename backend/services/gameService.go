@@ -44,6 +44,6 @@ func (s *GameService) Update(game *models.Game) error {
 func (s *GameService) Delete(id uint) error {
 	return s.repo.Delete(id)
 }
-func (s *GameService) Filter(date string, homeID *uint, awayID *uint, minRating *int, maxRating *int, sort string, page int, limit int) ([]models.Game, error) {
-	return s.repo.Filter(date, homeID, awayID, minRating, maxRating, sort, page, limit)
+func (s *GameService) Filter(date string, homeID *uint, awayID *uint, minRating *int, maxRating *int, sort string, page int, limit int, userID uint) ([]models.Game, error) {
+	return s.repo.Filter(date, homeID, awayID, minRating, maxRating, sort, page, limit, userID)
 }

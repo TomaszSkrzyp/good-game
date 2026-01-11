@@ -9,25 +9,30 @@ import (
 	"gorm.io/gorm"
 )
 
-func RegisterTeamStatsRoutes(gormDB *gorm.DB) {
-	teamStatsRepo := db.NewTeamStatsRepository(gormDB)
-	teamStatsService := services.NewTeamStatsService(teamStatsRepo)
+func RegisterTeamStatsRoutes(mux *http.ServeMux, gormDB *gorm.DB) {
+	repo := db.NewTeamStatsRepository(gormDB)
+	svc := services.NewTeamStatsService(repo)
 
-	http.HandleFunc("/teamStats", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/teamStats", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
-			handlers.CreateTeamStats(w, r, teamStatsService)
+			handlers.CreateTeamStats(w, r, svc)
 		case http.MethodGet:
-			handlers.GetTeamStatsByID(w, r, teamStatsService)
+			handlers.GetTeamStatsByID(w, r, svc)
 		case http.MethodPut:
-			handlers.UpdateTeamStats(w, r, teamStatsService)
+			handlers.UpdateTeamStats(w, r, svc)
 		case http.MethodDelete:
-			handlers.DeleteTeamStats(w, r, teamStatsService)
+			handlers.DeleteTeamStats(w, r, svc)
 		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
-	http.HandleFunc("/teamStatsFilter", func(w http.ResponseWriter, r *http.Request) {
-		handlers.FilterTeamStats(w, r, teamStatsService)
+
+	mux.HandleFunc("/teamStatsFilter", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed")
+			return
+		}
+		handlers.FilterTeamStats(w, r, svc)
 	})
 }

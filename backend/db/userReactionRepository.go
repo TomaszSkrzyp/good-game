@@ -1,11 +1,11 @@
 package db
 
 import (
-	"database/sql"
 	"errors"
 
 	"github.com/tomaszSkrzyp/good-game/models"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type UserReactionRepository struct {
@@ -16,8 +16,11 @@ func NewUserReactionRepository(db *gorm.DB) *UserReactionRepository {
 	return &UserReactionRepository{db: db}
 }
 
-func (r *UserReactionRepository) Create(ur *models.UserReaction) error {
-	return r.db.Create(ur).Error
+func (r *UserReactionRepository) UpdateOrCreate(ur *models.UserReaction) error {
+	return r.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "user_id"}, {Name: "game_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"liked"}),
+	}).Create(ur).Error
 }
 
 func (r *UserReactionRepository) GetByID(id uint) (*models.UserReaction, error) {
@@ -43,7 +46,6 @@ func (r *UserReactionRepository) Delete(id uint) error {
 	return res.Error
 }
 
-// Filter by optional userID, gameID, liked. zero values are ignored.
 func (r *UserReactionRepository) Filter(userID, gameID uint, liked *int, page, limit int) ([]models.UserReaction, error) {
 	var list []models.UserReaction
 	query := r.db.Model(&models.UserReaction{}).Preload("User").Preload("Game")
@@ -70,40 +72,28 @@ func (r *UserReactionRepository) Filter(userID, gameID uint, liked *int, page, l
 	return list, nil
 }
 
-func (r *UserReactionRepository) GetAverageForGame(gameID uint) (float64, error) {
-	var avg sql.NullFloat64
-	row := r.db.Model(&models.UserReaction{}).
-		Where("game_id = ?", gameID).
-		Select("AVG(liked)").Row()
-	if err := row.Scan(&avg); err != nil {
-		// if no rows, return 0
-		if errors.Is(err, sql.ErrNoRows) {
-			return 0, nil
-		}
-		return 0, err
-	}
-	if !avg.Valid {
-		return 0, nil
-	}
-	return avg.Float64, nil
+type ReactionStats struct {
+	Average float64
+	Count   int64
 }
 
-func (r *UserReactionRepository) GetAverageForTeam(teamID uint) (float64, error) {
-	var avg sql.NullFloat64
-	row := r.db.Model(&models.UserReaction{}).
+func (r *UserReactionRepository) GetStatsForGame(gameID uint) (float64, int64, error) {
+	var stats ReactionStats
+	err := r.db.Model(&models.UserReaction{}).
+		Select("COALESCE(AVG(liked), 0) as average, COUNT(*) as count").
+		Where("game_id = ?", gameID).
+		Scan(&stats).Error
+
+	return stats.Average, stats.Count, err
+}
+
+func (r *UserReactionRepository) GetStatsForTeam(teamID uint) (float64, int64, error) {
+	var stats ReactionStats
+	err := r.db.Table("user_reactions").
+		Select("COALESCE(AVG(liked), 0) as average, COUNT(user_reactions.id) as count").
 		Joins("JOIN games ON games.id = user_reactions.game_id").
 		Where("games.home_team_id = ? OR games.away_team_id = ?", teamID, teamID).
-		Select("AVG(liked)").Row()
+		Scan(&stats).Error
 
-	if err := row.Scan(&avg); err != nil {
-		// no rows or other error
-		if errors.Is(err, sql.ErrNoRows) {
-			return 0, nil
-		}
-		return 0, err
-	}
-	if !avg.Valid {
-		return 0, nil
-	}
-	return avg.Float64, nil
+	return stats.Average, stats.Count, err
 }

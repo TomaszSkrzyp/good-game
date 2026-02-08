@@ -1,26 +1,52 @@
-import { Component } from "solid-js"
-import LogoutButton from "./Logout"
+import { Component, Show } from "solid-js";
+import { A } from "@solidjs/router";
+import LogoutButton from "./Logout";
+import { auth } from "../data/store";
 
 const Header: Component = () => {
-  const goToProfile = () => (window.location.href = "/profile");
-
   return (
-    <header class="flex items-center justify-between p-4 bg-gray-800 text-white">
-      <div class="text-lg font-bold">Good Game</div>
-      <div class="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={goToProfile}
-          class="p-2 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center"
-          aria-label="Profile"
-          title="Profile"
+    <header class="flex items-center justify-between p-4 bg-gray-800 text-white shadow-md">
+      <A href="/games" class="text-xl font-extrabold tracking-tight hover:text-blue-400 transition-colors">
+        Good Game
+      </A>
+      
+      <div class="flex items-center gap-4">
+        <Show 
+          when={auth.isLoggedIn} 
+          fallback={
+            <div class="flex items-center gap-2">
+              <A 
+                href="/" 
+                class="px-4 py-2 text-sm font-medium hover:text-blue-400 transition-colors"
+              >
+                Login
+              </A>
+              <A 
+                href="/register" 
+                class="px-4 py-2 text-sm font-bold bg-blue-600 hover:bg-blue-700 rounded-lg transition-all shadow-sm"
+              >
+                Sign Up
+              </A>
+            </div>
+          }
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"  aria-hidden="true">
-            <path {...{ "stroke-linecap": "round", "stroke-linejoin": "round", d: "M5.121 17.804A9 9 0 1118.879 6.196 9 9 0 015.121 17.804z" }} />
-            <path {...{ "stroke-linecap": "round", "stroke-linejoin": "round", d: "M15 11a3 3 0 11-6 0 3 3 0 016 0z" }} />
-          </svg>
-        </button>
-        <LogoutButton />
+          <div class="flex items-center gap-3">
+            <span class="hidden md:block text-sm text-gray-400 mr-2">
+              Hi, <span class="text-white font-medium">{auth.userName}</span>
+            </span>
+            <A
+              href="/profile"
+              class="p-2 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors border border-gray-600"
+              aria-label="Profile"
+              title="Profile"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </A>
+            <LogoutButton />
+          </div>
+        </Show>
       </div>
     </header>
   );

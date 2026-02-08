@@ -1,6 +1,7 @@
 *.exe
 *.out
 *.db
+*.sh
 node_modules/
 dist/
 .env

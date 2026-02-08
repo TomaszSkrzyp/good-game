@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -16,8 +17,10 @@ const UserIDKey contextKey = "userID"
 
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
+			fmt.Println(`{"error":"missing token"}`)
 			http.Error(w, `{"error":"missing token"}`, http.StatusUnauthorized)
 			return
 		}
@@ -25,18 +28,19 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		// Handle "Bearer <token>"
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
+			fmt.Println("invalid token: ", parts)
 			http.Error(w, `{"error":"invalid token format"}`, http.StatusUnauthorized)
 			return
 		}
 
 		tokenString := parts[1]
 		claims := jwt.MapClaims{}
-
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-			return []byte(os.Getenv("JWT_KET")), nil
+			return []byte(os.Getenv("JWT_KEY")), nil
 		})
 
 		if err != nil || !token.Valid {
+			fmt.Println("token")
 			http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
 			return
 		}

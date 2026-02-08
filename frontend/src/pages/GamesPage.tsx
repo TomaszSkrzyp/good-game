@@ -33,12 +33,12 @@ const GamesPage: Component = () => {
     const val = parseInt(rating);
 
     try {
+      
+    const headers: Record<string, string> = {"Content-Type": "application/json"};
+    if (auth.token) headers["Authorization"] = `Bearer ${auth.token}`;
       const res = await fetch(`/api/userReactions`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
+        headers: headers,
         body: JSON.stringify({ gameId, rating: val }),
       });
 

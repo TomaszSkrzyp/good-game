@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/tomaszSkrzyp/good-game/db"
 	"github.com/tomaszSkrzyp/good-game/fetch"
@@ -35,8 +36,18 @@ func main() {
 		switch os.Args[1] {
 		case "--fetch-season":
 			log.Println("starting full season fetch...")
-			if err := fetch.FetchFullSeason(gormDB, 2025); err != nil {
-				log.Fatalf("fetch failed: %v", err)
+			if len(os.Args) > 2 && isValidSeason(os.Args[2]) {
+				seasonYear, err := strconv.Atoi(os.Args[2])
+				if err != nil {
+					log.Fatalf("error: invalid season number: %s using default season 2026", os.Args[2])
+				}
+				if err := fetch.FetchFullSeason(gormDB, seasonYear); err != nil {
+					log.Fatalf("fetch failed: %v for year: %d", err, seasonYear)
+				}
+				break
+			}
+			if err := fetch.FetchFullSeason(gormDB, 2026); err != nil {
+				log.Fatalf("fetch failed: %v for default season 2026", err)
 			}
 			log.Println("fetch completed successfully.")
 			os.Exit(0) // exit immediately
@@ -61,4 +72,14 @@ func main() {
 	if err := http.ListenAndServe(":"+port, router); err != nil {
 		log.Fatalf("server failed to start: %v", err)
 	}
+}
+
+func isValidSeason(season string) bool {
+	validSeasons := []string{"2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025", "2026"}
+	for _, valid := range validSeasons {
+		if valid == season {
+			return true
+		}
+	}
+	return false
 }

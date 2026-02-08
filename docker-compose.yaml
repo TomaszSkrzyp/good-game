@@ -21,7 +21,8 @@ services:
     restart: always
     env_file: ./.env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       DATABASE_URL: "host=db user=${DB_USER} password=${DB_PASSWORD} dbname=${DB_NAME} port=5432 sslmode=disable"
 
@@ -33,10 +34,11 @@ services:
       - "80:80"
     depends_on:
       - backend
-  # cronjob updating the games of "yesterday" and "today". fired every hour
+
   updater:
     build: ./backend
     container_name: gg-updater
+    restart: always 
     depends_on:
       db:
         condition: service_healthy
@@ -45,8 +47,9 @@ services:
       DATABASE_URL: "host=db user=${DB_USER} password=${DB_PASSWORD} dbname=${DB_NAME} port=5432 sslmode=disable"
     entrypoint: >
       sh -c "while true; do
-      echo 'Fetching yesterday and today...';
+      echo \"$(date): Starting fetch cycle...\";
       ./main --fetch-date $$(date -d \"@$$(($$(date +%s) - 86400))\" +%Y-%m-%d);
       ./main --fetch-date $$(date +%Y-%m-%d);
-      sleep 3600;
+      echo 'Fetch cycle completed. Sleeping 15 minutes...';
+      sleep 900;
       done"

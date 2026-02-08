@@ -41,18 +41,27 @@ func (r *GameRepository) Delete(id uint) error {
 func (r *GameRepository) Filter(date string, homeID *uint, awayID *uint, minRating *int, maxRating *int, sort string, page int, limit int, userID uint) ([]models.Game, error) {
 	var games []models.Game
 
-	// select games with subqueries for stats and user-specific rating
+	// base select
 	selectQuery := "games.*, " +
 		"(SELECT COALESCE(AVG(liked), 0) FROM user_reactions WHERE game_id = games.id) as avg_rating, " +
 		"(SELECT COUNT(*) FROM user_reactions WHERE user_reactions.game_id = games.id) as rating_count"
 
+	// dynamic select based on auth status
+	var queryArgs []interface{}
 	if userID > 0 {
 		selectQuery += ", (SELECT liked FROM user_reactions WHERE game_id = games.id AND user_id = ? LIMIT 1) as rating"
+		queryArgs = append(queryArgs, userID)
 	} else {
 		selectQuery += ", NULL as rating"
 	}
 
-	query := r.db.Model(&models.Game{}).Select(selectQuery, userID)
+	// initialize query with correct number of arguments
+	query := r.db.Model(&models.Game{}).Select(selectQuery, queryArgs...)
+
+	// filters
+	if date != "" {
+		query = query.Where("date(game_time) = ?", date)
+	}
 
 	// basic game filters
 	if date != "" {

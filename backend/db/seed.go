@@ -1,7 +1,6 @@
 package db
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/tomaszSkrzyp/good-game/models"
@@ -22,7 +21,6 @@ func SeedRoles(db *gorm.DB) {
 				if err := db.Create(&role).Error; err != nil {
 					log.Fatalf("Failed to seed role %s: %v", role.Name, err)
 				}
-				fmt.Println("Created role:", role.Name)
 			} else {
 				log.Fatalf("Failed to query roles: %v", err)
 			}
@@ -39,6 +37,5 @@ func SeedAdminUser(db *gorm.DB) {
 			RoleID:   1,
 		}
 		db.Create(&admin)
-		fmt.Println("Admin user created with username: admin, password: admin")
 	}
 }

@@ -6,6 +6,7 @@ import (
 
 type Game struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
+	ESPNID    string    `gorm:"column:espn_id;uniqueIndex" json:"espnId"`
 	CreatedAt time.Time `json:"createdAt"`
 	GameTime  time.Time `gorm:"index" json:"gameTime"`
 
@@ -21,4 +22,14 @@ type Game struct {
 	AvgRating   float64 `gorm:"column:avg_rating;->" json:"avgRating"`
 	RatingCount int64   `gorm:"column:rating_count;->" json:"ratingCount"`
 	Rating      int     `gorm:"column:rating;->" json:"rating"`
+
+	GameQuality GameQuality `gorm:"embedded" json:"gameQuality"`
+	Status      string      `json:"status"`
+}
+
+type GameQuality struct {
+	QualityScore uint `gorm:"column:quality_score;default:0" json:"qualityScore"`
+	IsBigScoring bool `gorm:"column:is_big_scoring;default:false" json:"isBigScoring"`
+	IsBigGame    bool `gorm:"column:is_big_game;default:false" json:"isBigGame"`
+	IsClutch     bool `gorm:"column:is_clutch;default:false" json:"isClutch"`
 }

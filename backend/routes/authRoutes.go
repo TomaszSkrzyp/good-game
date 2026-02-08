@@ -32,4 +32,7 @@ func RegisterAuthRoutes(mux *http.ServeMux, gormDB *gorm.DB) {
 	mux.HandleFunc("/profile", handlers.AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		handlers.GetProfileHandler(w, r, svc)
 	}))
+	mux.HandleFunc("/api/refresh", func(w http.ResponseWriter, r *http.Request) {
+		handlers.RefreshHandler(w, r, svc)
+	})
 }

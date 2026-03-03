@@ -1,6 +1,6 @@
 import { Component, Show } from "solid-js";
 import { A } from "@solidjs/router";
-import LogoutButton from "./Logout";
+import LogoutButton from "../pages/auth/Logout";
 import { auth } from "../data/store";
 
 const Header: Component = () => {

@@ -5,152 +5,127 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/tomaszSkrzyp/good-game/db"
 	"github.com/tomaszSkrzyp/good-game/models"
-	"github.com/tomaszSkrzyp/good-game/services"
 )
 
-func CreateTeamStats(w http.ResponseWriter, r *http.Request, tss *services.TeamStatsService) {
-	w.Header().Set("Content-Type", "application/json")
-
+func CreateTeamStats(w http.ResponseWriter, r *http.Request, repo *db.TeamStatsRepository) {
 	var teamStats models.TeamStats
 	if err := json.NewDecoder(r.Body).Decode(&teamStats); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error":"invalid request payload"}`))
+		ErrorResponse(w, http.StatusBadRequest, "invalid request payload")
 		return
 	}
 
-	if err := tss.Create(&teamStats); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"failed to create team stats"}`))
+	if err := repo.Create(&teamStats); err != nil {
+		ErrorResponse(w, http.StatusInternalServerError, "failed to create team stats")
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	resp, _ := json.Marshal(teamStats)
-	w.Write(resp)
+	JSONResponse(w, http.StatusCreated, teamStats)
 }
-func GetTeamStatsByID(w http.ResponseWriter, r *http.Request, tss *services.TeamStatsService) {
-	w.Header().Set("Content-Type", "application/json")
 
+func GetTeamStatsByID(w http.ResponseWriter, r *http.Request, repo *db.TeamStatsRepository) {
 	idStr := r.URL.Query().Get("id")
 	if idStr == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error":"missing id query param"}`))
+		ErrorResponse(w, http.StatusBadRequest, "missing id query parameter")
 		return
 	}
+
 	parsed, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error":"invalid id"}`))
+		ErrorResponse(w, http.StatusBadRequest, "invalid id parameter")
 		return
 	}
-	id := uint(parsed)
 
-	teamStats, err := tss.GetByID(id)
+	teamStats, err := repo.GetByID(uint(parsed))
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"could not retrieve team stats"}`))
+		ErrorResponse(w, http.StatusInternalServerError, "could not retrieve team stats")
 		return
 	}
+
 	if teamStats == nil {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error":"team stats not found"}`))
+		ErrorResponse(w, http.StatusNotFound, "team stats not found")
 		return
 	}
-	resp, _ := json.Marshal(teamStats)
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
-}
-func UpdateTeamStats(w http.ResponseWriter, r *http.Request, tss *services.TeamStatsService) {
-	w.Header().Set("Content-Type", "application/json")
 
+	JSONResponse(w, http.StatusOK, teamStats)
+}
+
+func UpdateTeamStats(w http.ResponseWriter, r *http.Request, repo *db.TeamStatsRepository) {
 	idStr := r.URL.Query().Get("id")
 	if idStr == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error":"missing id query param"}`))
+		ErrorResponse(w, http.StatusBadRequest, "missing id query parameter")
 		return
 	}
+
 	parsed, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error":"invalid id"}`))
+		ErrorResponse(w, http.StatusBadRequest, "invalid id parameter")
 		return
 	}
-	id := uint(parsed)
 
 	var teamStats models.TeamStats
 	if err := json.NewDecoder(r.Body).Decode(&teamStats); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error":"invalid request payload"}`))
-		return
-	}
-	teamStats.ID = id
-
-	if err := tss.Update(&teamStats); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"failed to update team stats"}`))
+		ErrorResponse(w, http.StatusBadRequest, "invalid request payload")
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	resp, _ := json.Marshal(teamStats)
-	w.Write(resp)
+	teamStats.ID = uint(parsed)
+
+	if err := repo.Update(&teamStats); err != nil {
+		ErrorResponse(w, http.StatusInternalServerError, "failed to update team stats")
+		return
+	}
+
+	JSONResponse(w, http.StatusOK, teamStats)
 }
-func DeleteTeamStats(w http.ResponseWriter, r *http.Request, tss *services.TeamStatsService) {
-	w.Header().Set("Content-Type", "application/json")
 
+func DeleteTeamStats(w http.ResponseWriter, r *http.Request, repo *db.TeamStatsRepository) {
 	idStr := r.URL.Query().Get("id")
 	if idStr == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error":"missing id query param"}`))
+		ErrorResponse(w, http.StatusBadRequest, "missing id query parameter")
 		return
 	}
+
 	parsed, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error":"invalid id"}`))
+		ErrorResponse(w, http.StatusBadRequest, "invalid id parameter")
 		return
 	}
-	id := uint(parsed)
 
-	if err := tss.Delete(id); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"failed to delete team stats"}`))
+	if err := repo.Delete(uint(parsed)); err != nil {
+		ErrorResponse(w, http.StatusInternalServerError, "failed to delete team stats")
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
-func FilterTeamStats(w http.ResponseWriter, r *http.Request, tss *services.TeamStatsService) {
-	w.Header().Set("Content-Type", "application/json")
 
+func FilterTeamStats(w http.ResponseWriter, r *http.Request, repo *db.TeamStatsRepository) {
 	teamIDStr := r.URL.Query().Get("teamId")
 	season := r.URL.Query().Get("season")
+
 	if teamIDStr == "" || season == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error":"missing teamId or season query param"}`))
+		ErrorResponse(w, http.StatusBadRequest, "missing teamId or season query parameter")
 		return
 	}
+
 	parsed, err := strconv.ParseUint(teamIDStr, 10, 64)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error":"invalid teamId"}`))
+		ErrorResponse(w, http.StatusBadRequest, "invalid teamId parameter")
 		return
 	}
-	teamID := uint(parsed)
 
-	teamStats, err := tss.Filter(teamID, season)
+	teamStats, err := repo.Filter(uint(parsed), season)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"could not filter team stats"}`))
+		ErrorResponse(w, http.StatusInternalServerError, "could not filter team stats")
 		return
 	}
+
 	if teamStats == nil {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error":"team stats not found"}`))
+		ErrorResponse(w, http.StatusNotFound, "team stats not found")
 		return
 	}
-	resp, _ := json.Marshal(teamStats)
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+
+	JSONResponse(w, http.StatusOK, teamStats)
 }

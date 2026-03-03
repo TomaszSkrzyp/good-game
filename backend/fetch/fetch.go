@@ -63,6 +63,21 @@ type ESPNLeader struct {
 	} `json:"athlete"`
 }
 
+type GamePlayerStats struct {
+	HomeTopScorer    string  `json:"homeTopScorer"`
+	HomeTopScorerPts float64 `json:"homeTopScorerPts"`
+	HomeTopAssister  string  `json:"homeTopAssister"`
+	HomeTopAssists   float64 `json:"homeTopAssists"`
+	HomeTopRebounder string  `json:"homeTopRebounder"`
+	HomeTopRebounds  float64 `json:"homeTopRebounds"`
+	AwayTopScorer    string  `json:"awayTopScorer"`
+	AwayTopScorerPts float64 `json:"awayTopScorerPts"`
+	AwayTopAssister  string  `json:"awayTopAssister"`
+	AwayTopAssists   float64 `json:"awayTopAssists"`
+	AwayTopRebounder string  `json:"awayTopRebounder"`
+	AwayTopRebounds  float64 `json:"awayTopRebounds"`
+}
+
 // FetchFullSeason requests data in 7-day ranges to minimize API calls
 func FetchFullSeason(gormDB *gorm.DB, year int) error {
 	log.Printf("Initiating full season sync for year %d", year)
@@ -90,7 +105,6 @@ func FetchFullSeason(gormDB *gorm.DB, year int) error {
 }
 
 func FetchGamesByDate(gormDB *gorm.DB, dates string) error {
-	// dates can be single "YYYYMMDD" or range "YYYYMMDD-YYYYMMDD"
 	url := fmt.Sprintf("http://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=%s", dates)
 
 	resp, err := http.Get(url)
@@ -110,8 +124,105 @@ func FetchGamesByDate(gormDB *gorm.DB, dates string) error {
 	return nil
 }
 
+func FetchGamePlayerStats(espnID string, gameDate time.Time) (*GamePlayerStats, error) {
+	// Fetch a 2-day range (1 day before and the game date) to account for timezone differences
+	startDate := gameDate.AddDate(0, 0, -1)
+	dateParam := fmt.Sprintf("%s-%s", startDate.Format("20060102"), gameDate.Format("20060102"))
+
+	log.Printf("Fetching stats for ESPN ID %s on date range %s", espnID, dateParam)
+
+	url := fmt.Sprintf("http://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=%s", dateParam)
+	log.Printf("Request URL: %s", url)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("network error: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("ESPN API returned status %d", resp.StatusCode)
+	}
+
+	var data ESPNResponse
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return nil, fmt.Errorf("json decode error: %w", err)
+	}
+
+	log.Printf("Found %d events for date range %s", len(data.Events), dateParam)
+
+	// Find the game by ESPN ID
+	var targetEvent ESPNEvent
+	for _, event := range data.Events {
+		log.Printf("Checking event ID: %s vs %s", event.ID, espnID)
+		if event.ID == espnID {
+			targetEvent = event
+			break
+		}
+	}
+
+	if targetEvent.ID == "" {
+		return nil, fmt.Errorf("game not found for espn id %s in date range %s", espnID, dateParam)
+	}
+
+	if len(targetEvent.Competitions) == 0 {
+		return nil, fmt.Errorf("no competition data found")
+	}
+
+	comp := targetEvent.Competitions[0]
+	var home, away ESPNCompetitor
+
+	for _, c := range comp.Competitors {
+		if c.HomeAway == "home" {
+			home = c
+		} else {
+			away = c
+		}
+	}
+
+	stats := &GamePlayerStats{
+		HomeTopScorer:    getTopPlayer(home.Leaders, "points"),
+		HomeTopScorerPts: getTopPlayerAmount(home.Leaders, "points"),
+		HomeTopAssister:  getTopPlayer(home.Leaders, "assists"),
+		HomeTopAssists:   getTopPlayerAmount(home.Leaders, "assists"),
+		HomeTopRebounder: getTopPlayer(home.Leaders, "rebounds"),
+		HomeTopRebounds:  getTopPlayerAmount(home.Leaders, "rebounds"),
+		AwayTopScorer:    getTopPlayer(away.Leaders, "points"),
+		AwayTopScorerPts: getTopPlayerAmount(away.Leaders, "points"),
+		AwayTopAssister:  getTopPlayer(away.Leaders, "assists"),
+		AwayTopAssists:   getTopPlayerAmount(away.Leaders, "assists"),
+		AwayTopRebounder: getTopPlayer(away.Leaders, "rebounds"),
+		AwayTopRebounds:  getTopPlayerAmount(away.Leaders, "rebounds"),
+	}
+
+	return stats, nil
+}
+
+func getTopPlayer(leaders []ESPNLeaderCategory, statName string) string {
+	for _, category := range leaders {
+		if category.Name == statName && len(category.Leaders) > 0 {
+			return category.Leaders[0].Athlete.DisplayName
+		}
+	}
+	return ""
+}
+
+func getTopPlayerAmount(leaders []ESPNLeaderCategory, statName string) float64 {
+	for _, category := range leaders {
+		if category.Name == statName && len(category.Leaders) > 0 {
+			return category.Leaders[0].Value
+		}
+	}
+	return 0
+}
+
 func saveESPNGame(gormDB *gorm.DB, event ESPNEvent) {
+
 	if len(event.Competitions) == 0 {
+		return
+	}
+	if event.Status.Type.Name == "STATUS_POSTPONED" {
+		fmt.Println("game has been pospotend hence its skipped")
 		return
 	}
 	comp := event.Competitions[0]
@@ -139,7 +250,8 @@ func saveESPNGame(gormDB *gorm.DB, event ESPNEvent) {
 		return
 	}
 	if event.Status.Type.Name != "STATUS_FINAL" {
-		log.Printf("Skipping unfinished game %s", event.ID)
+		fmt.Printf(`Skipping unfinished game %s with status %s of %s and teams %s vs %s	`, event.ID, event.Status.Type.Name, event.Date, home.Team.Abbreviation, away.Team.Abbreviation)
+
 		err = gormDB.Where(models.Game{
 			HomeTeamID: homeID,
 			AwayTeamID: awayID,
@@ -159,9 +271,9 @@ func saveESPNGame(gormDB *gorm.DB, event ESPNEvent) {
 		}
 		return 0
 	}
-	hQs := make([]int, 4)
-	aQs := make([]int, 4)
-	for i := 0; i < 4; i++ {
+	hQs := make([]int, len(home.LineScores))
+	aQs := make([]int, len(away.LineScores))
+	for i := 0; i < len(home.LineScores); i++ {
 		hQs[i] = getQScore(home.LineScores, i)
 		aQs[i] = getQScore(away.LineScores, i)
 	}

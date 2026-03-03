@@ -5,135 +5,146 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/tomaszSkrzyp/good-game/db"
+	"github.com/tomaszSkrzyp/good-game/middleware"
 	"github.com/tomaszSkrzyp/good-game/models"
-	"github.com/tomaszSkrzyp/good-game/services"
 )
 
-func CreateUserReaction(w http.ResponseWriter, r *http.Request, urs *services.UserReactionService) {
-	w.Header().Set("Content-Type", "application/json")
-
-	userID, ok := r.Context().Value(UserIDKey).(uint)
+func CreateUserReaction(w http.ResponseWriter, r *http.Request, repo *db.UserReactionRepository) {
+	userID, ok := r.Context().Value(middleware.UserIDKey).(uint)
 	if !ok {
-		w.WriteHeader(http.StatusUnauthorized)
+		ErrorResponse(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	var ur models.UserReaction
 	if err := json.NewDecoder(r.Body).Decode(&ur); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		ErrorResponse(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
 	ur.UserID = userID
 
 	if ur.Liked < 1 || ur.Liked > 10 {
-		w.WriteHeader(http.StatusBadRequest)
+		ErrorResponse(w, http.StatusBadRequest, "liked must be between 1 and 10")
 		return
 	}
 
-	// Wywołanie metody UpdateOrCreate (Upsert)
-	if err := urs.UpdateOrCreate(&ur); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+	if err := repo.UpdateOrCreate(&ur); err != nil {
+		ErrorResponse(w, http.StatusInternalServerError, "failed to create reaction")
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(ur)
+	JSONResponse(w, http.StatusOK, ur)
 }
 
-func GetUserReactionByID(w http.ResponseWriter, r *http.Request, urs *services.UserReactionService) {
-	w.Header().Set("Content-Type", "application/json")
-
+func GetUserReactionByID(w http.ResponseWriter, r *http.Request, repo *db.UserReactionRepository) {
 	idStr := r.URL.Query().Get("id")
-	parsed, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+	if idStr == "" {
+		ErrorResponse(w, http.StatusBadRequest, "missing id parameter")
 		return
 	}
 
-	ur, err := urs.GetByID(uint(parsed))
+	parsed, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		ErrorResponse(w, http.StatusBadRequest, "invalid id parameter")
+		return
+	}
+
+	ur, err := repo.GetByID(uint(parsed))
 	if err != nil || ur == nil {
-		w.WriteHeader(http.StatusNotFound)
+		ErrorResponse(w, http.StatusNotFound, "reaction not found")
 		return
 	}
 
-	userID, _ := r.Context().Value(UserIDKey).(uint)
-	if ur.UserID != userID {
-		w.WriteHeader(http.StatusForbidden)
+	userID, _ := r.Context().Value(middleware.UserIDKey).(uint)
+	if userID != 0 && ur.UserID != userID {
+		ErrorResponse(w, http.StatusForbidden, "forbidden")
 		return
 	}
 
-	json.NewEncoder(w).Encode(ur)
+	JSONResponse(w, http.StatusOK, ur)
 }
 
-func UpdateUserReaction(w http.ResponseWriter, r *http.Request, urs *services.UserReactionService) {
-	w.Header().Set("Content-Type", "application/json")
-
-	userID, ok := r.Context().Value(UserIDKey).(uint)
+func UpdateUserReaction(w http.ResponseWriter, r *http.Request, repo *db.UserReactionRepository) {
+	userID, ok := r.Context().Value(middleware.UserIDKey).(uint)
 	if !ok {
-		w.WriteHeader(http.StatusUnauthorized)
+		ErrorResponse(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	idStr := r.URL.Query().Get("id")
-	parsed, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+	if idStr == "" {
+		ErrorResponse(w, http.StatusBadRequest, "missing id parameter")
 		return
 	}
 
-	existing, err := urs.GetByID(uint(parsed))
+	parsed, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		ErrorResponse(w, http.StatusBadRequest, "invalid id parameter")
+		return
+	}
+
+	existing, err := repo.GetByID(uint(parsed))
 	if err != nil || existing == nil || existing.UserID != userID {
-		w.WriteHeader(http.StatusForbidden)
+		ErrorResponse(w, http.StatusForbidden, "forbidden")
 		return
 	}
 
 	var ur models.UserReaction
 	if err := json.NewDecoder(r.Body).Decode(&ur); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		ErrorResponse(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
 	ur.ID = uint(parsed)
 	ur.UserID = userID
 
-	if err := urs.Update(&ur); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+	if err := repo.Update(&ur); err != nil {
+		ErrorResponse(w, http.StatusInternalServerError, "failed to update reaction")
 		return
 	}
 
-	json.NewEncoder(w).Encode(ur)
+	JSONResponse(w, http.StatusOK, ur)
 }
 
-func DeleteUserReaction(w http.ResponseWriter, r *http.Request, urs *services.UserReactionService) {
-	w.Header().Set("Content-Type", "application/json")
+func DeleteUserReaction(w http.ResponseWriter, r *http.Request, repo *db.UserReactionRepository) {
+	userID, ok := r.Context().Value(middleware.UserIDKey).(uint)
+	if !ok {
+		ErrorResponse(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
 
-	userID, _ := r.Context().Value(UserIDKey).(uint)
 	idStr := r.URL.Query().Get("id")
+	if idStr == "" {
+		ErrorResponse(w, http.StatusBadRequest, "missing id parameter")
+		return
+	}
+
 	parsed, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		ErrorResponse(w, http.StatusBadRequest, "invalid id parameter")
 		return
 	}
 
-	existing, _ := urs.GetByID(uint(parsed))
-	if existing == nil || existing.UserID != userID {
-		w.WriteHeader(http.StatusForbidden)
+	existing, err := repo.GetByID(uint(parsed))
+	if err != nil || existing == nil || existing.UserID != userID {
+		ErrorResponse(w, http.StatusForbidden, "forbidden")
 		return
 	}
 
-	if err := urs.Delete(uint(parsed)); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+	if err := repo.Delete(uint(parsed)); err != nil {
+		ErrorResponse(w, http.StatusInternalServerError, "failed to delete reaction")
 		return
 	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func FilterUserReactions(w http.ResponseWriter, r *http.Request, urs *services.UserReactionService) {
-	w.Header().Set("Content-Type", "application/json")
+func FilterUserReactions(w http.ResponseWriter, r *http.Request, repo *db.UserReactionRepository) {
 	q := r.URL.Query()
 
-	userID, _ := r.Context().Value(UserIDKey).(uint)
+	userID, _ := r.Context().Value(middleware.UserIDKey).(uint)
 
 	if v := q.Get("userId"); v != "" {
 		if p, err := strconv.ParseUint(v, 10, 64); err == nil {
@@ -159,57 +170,67 @@ func FilterUserReactions(w http.ResponseWriter, r *http.Request, urs *services.U
 	if page < 1 {
 		page = 1
 	}
+
 	limit, _ := strconv.Atoi(q.Get("limit"))
-	if limit < 1 {
+	if limit < 1 || limit > 100 {
 		limit = 50
 	}
 
-	list, err := urs.Filter(userID, gameID, likedPtr, page, limit)
+	list, err := repo.Filter(userID, gameID, likedPtr, page, limit)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		ErrorResponse(w, http.StatusInternalServerError, "failed to fetch reactions")
 		return
 	}
-	json.NewEncoder(w).Encode(list)
+
+	JSONResponse(w, http.StatusOK, list)
 }
 
-func GetAverageReactionForGame(w http.ResponseWriter, r *http.Request, urs *services.UserReactionService) {
-	w.Header().Set("Content-Type", "application/json")
+func GetAverageReactionForGame(w http.ResponseWriter, r *http.Request, repo *db.UserReactionRepository) {
 	gameIDStr := r.URL.Query().Get("gameId")
+	if gameIDStr == "" {
+		ErrorResponse(w, http.StatusBadRequest, "missing gameId parameter")
+		return
+	}
+
 	parsed, err := strconv.ParseUint(gameIDStr, 10, 64)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		ErrorResponse(w, http.StatusBadRequest, "invalid gameId parameter")
 		return
 	}
 
-	avg, count, err := urs.GetAverageAndCountForGame(uint(parsed))
+	avg, count, err := repo.GetStatsForGame(uint(parsed))
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		ErrorResponse(w, http.StatusInternalServerError, "failed to fetch stats")
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	JSONResponse(w, http.StatusOK, map[string]interface{}{
 		"gameId":  uint(parsed),
 		"average": avg,
 		"count":   count,
 	})
 }
 
-func GetAverageReactionForTeam(w http.ResponseWriter, r *http.Request, urs *services.UserReactionService) {
-	w.Header().Set("Content-Type", "application/json")
+func GetAverageReactionForTeam(w http.ResponseWriter, r *http.Request, repo *db.UserReactionRepository) {
 	teamIDStr := r.URL.Query().Get("teamId")
+	if teamIDStr == "" {
+		ErrorResponse(w, http.StatusBadRequest, "missing teamId parameter")
+		return
+	}
+
 	parsed, err := strconv.ParseUint(teamIDStr, 10, 64)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		ErrorResponse(w, http.StatusBadRequest, "invalid teamId parameter")
 		return
 	}
 
-	avg, count, err := urs.GetAverageAndCountForTeam(uint(parsed))
+	avg, count, err := repo.GetStatsForTeam(uint(parsed))
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		ErrorResponse(w, http.StatusInternalServerError, "failed to fetch stats")
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	JSONResponse(w, http.StatusOK, map[string]interface{}{
 		"teamId":  uint(parsed),
 		"average": avg,
 		"count":   count,

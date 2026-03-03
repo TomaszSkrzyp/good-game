@@ -19,6 +19,8 @@ services:
     build: ./backend
     container_name: gg-backend
     restart: always
+    ports:
+      - "8080:8080"
     env_file: ./.env
     depends_on:
       db:
@@ -36,7 +38,9 @@ services:
       - backend
 
   updater:
-    build: ./backend
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile.updater
     container_name: gg-updater
     restart: always 
     depends_on:
@@ -45,11 +49,3 @@ services:
     env_file: ./.env
     environment:
       DATABASE_URL: "host=db user=${DB_USER} password=${DB_PASSWORD} dbname=${DB_NAME} port=5432 sslmode=disable"
-    entrypoint: >
-      sh -c "while true; do
-      echo \"$(date): Starting fetch cycle...\";
-      ./main --fetch-date $$(date -d \"@$$(($$(date +%s) - 86400))\" +%Y-%m-%d);
-      ./main --fetch-date $$(date +%Y-%m-%d);
-      echo 'Fetch cycle completed. Sleeping 15 minutes...';
-      sleep 900;
-      done"

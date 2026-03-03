@@ -2,21 +2,24 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
+	"github.com/tomaszSkrzyp/good-game/db"
+	"github.com/tomaszSkrzyp/good-game/fetch"
+	"github.com/tomaszSkrzyp/good-game/middleware"
 	"github.com/tomaszSkrzyp/good-game/models"
-	"github.com/tomaszSkrzyp/good-game/services"
 )
 
-func CreateGame(w http.ResponseWriter, r *http.Request, gs *services.GameService) {
+func CreateGame(w http.ResponseWriter, r *http.Request, repo *db.GameRepository) {
 	var game models.Game
 	if err := json.NewDecoder(r.Body).Decode(&game); err != nil {
 		ErrorResponse(w, http.StatusBadRequest, "invalid request")
 		return
 	}
 
-	if err := gs.Create(&game); err != nil {
+	if err := repo.Create(&game); err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "could not create game")
 		return
 	}
@@ -24,7 +27,7 @@ func CreateGame(w http.ResponseWriter, r *http.Request, gs *services.GameService
 	JSONResponse(w, http.StatusCreated, game)
 }
 
-func GetGameByID(w http.ResponseWriter, r *http.Request, gs *services.GameService) {
+func GetGameByID(w http.ResponseWriter, r *http.Request, repo *db.GameRepository) {
 	idStr := r.URL.Query().Get("id")
 	parsed, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
@@ -32,7 +35,7 @@ func GetGameByID(w http.ResponseWriter, r *http.Request, gs *services.GameServic
 		return
 	}
 
-	game, err := gs.GetByID(uint(parsed))
+	game, err := repo.GetByID(uint(parsed))
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "could not retrieve game")
 		return
@@ -45,7 +48,7 @@ func GetGameByID(w http.ResponseWriter, r *http.Request, gs *services.GameServic
 	JSONResponse(w, http.StatusOK, game)
 }
 
-func UpdateGame(w http.ResponseWriter, r *http.Request, gs *services.GameService) {
+func UpdateGame(w http.ResponseWriter, r *http.Request, repo *db.GameRepository) {
 	idStr := r.URL.Query().Get("id")
 	parsed, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
@@ -60,7 +63,7 @@ func UpdateGame(w http.ResponseWriter, r *http.Request, gs *services.GameService
 	}
 
 	game.ID = uint(parsed)
-	if err := gs.Update(&game); err != nil {
+	if err := repo.Update(&game); err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "could not update game")
 		return
 	}
@@ -68,10 +71,10 @@ func UpdateGame(w http.ResponseWriter, r *http.Request, gs *services.GameService
 	JSONResponse(w, http.StatusOK, game)
 }
 
-func FilterGames(w http.ResponseWriter, r *http.Request, gs *services.GameService) {
+func FilterGames(w http.ResponseWriter, r *http.Request, repo *db.GameRepository) {
 	q := r.URL.Query()
 
-	val := r.Context().Value(UserIDKey)
+	val := r.Context().Value(middleware.UserIDKey)
 	var userID uint
 	if val != nil {
 		if id, ok := val.(uint); ok {
@@ -115,7 +118,7 @@ func FilterGames(w http.ResponseWriter, r *http.Request, gs *services.GameServic
 		limit = 20
 	}
 
-	games, err := gs.Filter(date, homeID, awayID, minRating, maxRating, sort, page, limit, userID)
+	games, err := repo.Filter(date, homeID, awayID, minRating, maxRating, sort, page, limit, userID)
 
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "could not retrieve games")
@@ -125,7 +128,7 @@ func FilterGames(w http.ResponseWriter, r *http.Request, gs *services.GameServic
 	JSONResponse(w, http.StatusOK, games)
 }
 
-func DeleteGame(w http.ResponseWriter, r *http.Request, gs *services.GameService) {
+func DeleteGame(w http.ResponseWriter, r *http.Request, repo *db.GameRepository) {
 	idStr := r.URL.Query().Get("id")
 	parsed, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
@@ -133,10 +136,45 @@ func DeleteGame(w http.ResponseWriter, r *http.Request, gs *services.GameService
 		return
 	}
 
-	if err := gs.Delete(uint(parsed)); err != nil {
+	if err := repo.Delete(uint(parsed)); err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "could not delete game")
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func GetGameStats(w http.ResponseWriter, r *http.Request, repo *db.GameRepository) {
+	gameID := r.URL.Query().Get("gameId")
+	if gameID == "" {
+		ErrorResponse(w, http.StatusBadRequest, "gameId query parameter required")
+		return
+	}
+
+	gameIDParsed, err := strconv.ParseUint(gameID, 10, 64)
+	if err != nil {
+		ErrorResponse(w, http.StatusBadRequest, "invalid gameId")
+		return
+	}
+
+	game, err := repo.GetByID(uint(gameIDParsed))
+	if err != nil || game == nil {
+		ErrorResponse(w, http.StatusNotFound, "Game not found")
+		return
+	}
+
+	if game.ESPNID == "" {
+		ErrorResponse(w, http.StatusBadRequest, "Game has no ESPN ID")
+		return
+	}
+
+	// game.GameTime is already time.Time, no need to parse
+	stats, err := fetch.FetchGamePlayerStats(game.ESPNID, game.GameTime)
+	if err != nil {
+		log.Printf("Error fetching stats for ESPN ID %s: %v", game.ESPNID, err)
+		ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch game stats")
+		return
+	}
+
+	JSONResponse(w, http.StatusOK, stats)
 }

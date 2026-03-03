@@ -6,13 +6,13 @@ import (
 
 type User struct {
 	ID          uint      `gorm:"primaryKey" json:"id"`
+	UserName    string    `json:"userName"`
+	Password    string    `json:"-"`
+	Email       string    `json:"email"`
 	RoleID      uint      `json:"roleId"`
 	Role        Role      `gorm:"foreignKey:RoleID" json:"role,omitempty"`
-	CreatedAt   time.Time `json:"createdAt"`
 	LastLoginAt time.Time `json:"lastLoginAt"`
-	UserName    string    `json:"userName"`
-	Email       string    `json:"email"`
-	Password    string    `json:"-"`
+	HideScores  bool      `json:"hideScores" gorm:"column:hide_scores"`
 }
 
 type Role struct {

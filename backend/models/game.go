@@ -29,7 +29,12 @@ type Game struct {
 
 type GameQuality struct {
 	QualityScore uint `gorm:"column:quality_score;default:0" json:"qualityScore"`
+
 	IsBigScoring bool `gorm:"column:is_big_scoring;default:false" json:"isBigScoring"`
 	IsBigGame    bool `gorm:"column:is_big_game;default:false" json:"isBigGame"`
 	IsClutch     bool `gorm:"column:is_clutch;default:false" json:"isClutch"`
+	IsStarDuel   bool `gorm:"column:is_star_duel;default:false" json:"isStarDuel"`
+	IsHugeSwing  bool `gorm:"column:is_huge_swing;default:false" json:"isHugeSwing"`
+	IsShootout   bool `gorm:"column:is_shootout;default:false" json:"isShootout"`
+	IsGritty     bool `gorm:"column:is_gritty;default:false" json:"isGritty"`
 }

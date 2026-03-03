@@ -1,4 +1,11 @@
+
+import './index.css';
 import { render } from "solid-js/web";
 import App from "./App";
-import './index.css';
-render(() => <App />, document.getElementById("app")!);
+import { GameProvider } from "./pages/games/GameContext";
+
+render(() => (
+  <GameProvider>
+    <App />
+  </GameProvider>
+), document.getElementById("app") as HTMLElement);

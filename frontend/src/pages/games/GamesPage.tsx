@@ -1,8 +1,10 @@
 import { Component, createSignal, createResource, For, Show } from "solid-js";
-import { auth } from "../data/store";
-import GameItem, { Game } from "../components/GameItem";
+import { auth } from "../../data/store";
+import GameItem, { Game } from "./GameItem";
+import { useGameContext } from "./GameContext";
 
 const GamesPage: Component = () => {
+   const { hideScores, toggleHideScores } = useGameContext();
   const todayStr = () => {
   const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -64,6 +66,19 @@ const GamesPage: Component = () => {
     <div class="max-w-4xl mx-auto p-4">
       <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <h1 class="text-3xl font-bold text-gray-800">NBA Schedule</h1>
+        <label class="ml-4 flex items-center gap-2 text-sm select-none">
+            <span class="text-xs text-gray-600">Hide scores</span>
+            <div class="relative">
+              <input
+                type="checkbox"
+                checked={hideScores()}
+                onInput={(e) => toggleHideScores()}
+                class="sr-only"
+              />
+              <div class={`w-10 h-6 rounded-full transition-colors ${hideScores() ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+              <div class={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transform transition-transform ${hideScores() ? 'translate-x-4' : ''}`}></div>
+            </div>
+          </label>
         <div class="flex items-center gap-2">
           <button onClick={() => shiftDay(-1)} class="p-2 hover:bg-gray-100 rounded-full border">←</button>
           <input
@@ -73,8 +88,7 @@ const GamesPage: Component = () => {
             class="px-3 py-2 border rounded-lg outline-none"
           />
           <button onClick={() => shiftDay(1)} class="p-2 hover:bg-gray-100 rounded-full border">→</button>
-          <button onClick={() => setDay(todayStr())} class="ml-2 px-3 py-2 bg-gray-200 rounded-lg text-sm">Today</button>
-        </div>
+          <button onClick={() => setDay(todayStr())} class="ml-2 px-3 py-2 bg-gray-200 rounded-lg text-sm">Today</button>        </div>
       </div>
 
       <Show when={games.loading}>
@@ -83,7 +97,7 @@ const GamesPage: Component = () => {
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <For each={games()}>
-          {(game) => <GameItem game={game} onRate={submitRating} />}
+          {(game) => <GameItem game={game} onRate={submitRating} hideScores={hideScores()} />}
         </For>
       </div>
 

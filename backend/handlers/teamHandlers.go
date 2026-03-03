@@ -1,73 +1,56 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 
-	"github.com/tomaszSkrzyp/good-game/models"
-	"github.com/tomaszSkrzyp/good-game/services"
+	"github.com/tomaszSkrzyp/good-game/db"
 )
 
-func GetTeamByID(w http.ResponseWriter, r *http.Request, service *services.TeamService) {
-	w.Header().Set("Content-Type", "application/json")
-
-	q := r.URL.Query()
-	idStr := q.Get("id")
+func GetTeamByID(w http.ResponseWriter, r *http.Request, repo *db.TeamRepository) {
+	idStr := r.URL.Query().Get("id")
 	if idStr == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error":"missing id parameter"}`))
+		ErrorResponse(w, http.StatusBadRequest, "missing id parameter")
 		return
 	}
+
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error":"invalid id parameter"}`))
+		ErrorResponse(w, http.StatusBadRequest, "invalid id parameter")
 		return
 	}
 
-	team, err := service.GetByID(uint(id))
+	team, err := repo.GetByID(uint(id))
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
+		ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+
 	if team == nil {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error":"team not found"}`))
+		ErrorResponse(w, http.StatusNotFound, "team not found")
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-	resp, _ := json.Marshal(team)
-	w.Write(resp)
+
+	JSONResponse(w, http.StatusOK, team)
 }
 
-func FilterTeams(w http.ResponseWriter, r *http.Request, service *services.TeamService) {
-	w.Header().Set("Content-Type", "application/json")
-
+func FilterTeams(w http.ResponseWriter, r *http.Request, repo *db.TeamRepository) {
 	q := r.URL.Query()
 	name := q.Get("name")
-	conferenceIDStr := q.Get("conferenceId")
 	conferenceName := q.Get("conferenceName")
 
-	var conferenceID uint64
-	var err error
-	if conferenceIDStr != "" {
-		conferenceID, err = strconv.ParseUint(conferenceIDStr, 10, 64)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(`{"error":"invalid conferenceId parameter"}`))
-			return
+	var conferenceID uint
+	if conferenceIDStr := q.Get("conferenceId"); conferenceIDStr != "" {
+		if id, err := strconv.ParseUint(conferenceIDStr, 10, 64); err == nil {
+			conferenceID = uint(id)
 		}
 	}
 
-	var teams []models.Team
-	if teams, err = service.Filter(name, conferenceName, uint(conferenceID)); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
+	teams, err := repo.Filter(name, conferenceName, conferenceID)
+	if err != nil {
+		ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-	resp, _ := json.Marshal(teams)
-	w.Write(resp)
+
+	JSONResponse(w, http.StatusOK, teams)
 }

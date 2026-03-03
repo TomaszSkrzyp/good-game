@@ -5,25 +5,22 @@ import (
 
 	"github.com/tomaszSkrzyp/good-game/db"
 	"github.com/tomaszSkrzyp/good-game/handlers"
-	"github.com/tomaszSkrzyp/good-game/services"
+	"github.com/tomaszSkrzyp/good-game/middleware"
 	"gorm.io/gorm"
 )
 
 func RegisterUserReactionRoutes(mux *http.ServeMux, gormDB *gorm.DB) {
 	repo := db.NewUserReactionRepository(gormDB)
-	svc := services.NewUserReactionService(repo)
 
 	mux.HandleFunc("/userReactions", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			// allow guests to see reactions (e.g., filtered by game)
-			handlers.OptionalAuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
-				handlers.FilterUserReactions(w, r, svc)
+			middleware.OptionalAuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
+				handlers.FilterUserReactions(w, r, repo)
 			})(w, r)
 		case http.MethodPost:
-			// strictly require login to create a reaction
-			handlers.AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
-				handlers.CreateUserReaction(w, r, svc)
+			middleware.AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
+				handlers.CreateUserReaction(w, r, repo)
 			})(w, r)
 		default:
 			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "method not allowed")
@@ -33,29 +30,28 @@ func RegisterUserReactionRoutes(mux *http.ServeMux, gormDB *gorm.DB) {
 	mux.HandleFunc("/userReaction", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			handlers.OptionalAuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
-				handlers.GetUserReactionByID(w, r, svc)
+			middleware.OptionalAuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
+				handlers.GetUserReactionByID(w, r, repo)
 			})(w, r)
 		case http.MethodPut:
-			handlers.AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
-				handlers.UpdateUserReaction(w, r, svc)
+			middleware.AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
+				handlers.UpdateUserReaction(w, r, repo)
 			})(w, r)
 		case http.MethodDelete:
-			handlers.AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
-				handlers.DeleteUserReaction(w, r, svc)
+			middleware.AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
+				handlers.DeleteUserReaction(w, r, repo)
 			})(w, r)
 		default:
 			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "method not allowed")
 		}
 	})
 
-	// stats endpoints are public by default
 	mux.HandleFunc("/userReactions/average/game", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "method not allowed")
 			return
 		}
-		handlers.GetAverageReactionForGame(w, r, svc)
+		handlers.GetAverageReactionForGame(w, r, repo)
 	})
 
 	mux.HandleFunc("/userReactions/average/team", func(w http.ResponseWriter, r *http.Request) {
@@ -63,6 +59,6 @@ func RegisterUserReactionRoutes(mux *http.ServeMux, gormDB *gorm.DB) {
 			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "method not allowed")
 			return
 		}
-		handlers.GetAverageReactionForTeam(w, r, svc)
+		handlers.GetAverageReactionForTeam(w, r, repo)
 	})
 }

@@ -1,6 +1,6 @@
 import { createSignal, Component, onMount, Show } from "solid-js";
 import { useNavigate } from "@solidjs/router";
-import { loginUser, auth } from "../data/store";
+import { loginUser, auth } from "../../data/store";
 
 const LoginPage: Component = () => {
   const [username, setUsername] = createSignal("");

@@ -23,7 +23,6 @@ func BuildTeamMap(db *gorm.DB) error {
 		return err
 	}
 
-	// Czyścimy i wypełniamy mapę skrótami (np. "LAL" -> 1)
 	for _, t := range teams {
 		TeamAbbrToIDMap[t.Abbreviation] = t.ID
 	}

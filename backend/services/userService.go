@@ -79,3 +79,13 @@ func (s *UserService) GetUserByID(userID uint) (*models.User, error) {
 	}
 	return user, nil
 }
+
+func (s *UserService) SetHideScores(userID uint, hideScores bool) error {
+	user, err := s.repo.GetByID(userID)
+	if err != nil || user == nil {
+		return ErrUserNotFound
+	}
+
+	user.HideScores = hideScores
+	return s.repo.Update(user)
+}

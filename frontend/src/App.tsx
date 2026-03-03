@@ -1,9 +1,9 @@
 import { Router, Route } from "@solidjs/router";
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
+import LoginPage from "./pages/auth/LoginPage";
+import RegisterPage from "./pages/auth/RegisterPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProfilePage from "./pages/ProfilePage";
-import GamesPage from "./pages/GamesPage";
+import GamesPage from "./pages/games/GamesPage";
 import Layout from "./components/Layout";
 
 const App = () => {

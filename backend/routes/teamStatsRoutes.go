@@ -5,24 +5,22 @@ import (
 
 	"github.com/tomaszSkrzyp/good-game/db"
 	"github.com/tomaszSkrzyp/good-game/handlers"
-	"github.com/tomaszSkrzyp/good-game/services"
 	"gorm.io/gorm"
 )
 
 func RegisterTeamStatsRoutes(mux *http.ServeMux, gormDB *gorm.DB) {
 	repo := db.NewTeamStatsRepository(gormDB)
-	svc := services.NewTeamStatsService(repo)
 
 	mux.HandleFunc("/teamStats", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
-			handlers.CreateTeamStats(w, r, svc)
+			handlers.CreateTeamStats(w, r, repo)
 		case http.MethodGet:
-			handlers.GetTeamStatsByID(w, r, svc)
+			handlers.GetTeamStatsByID(w, r, repo)
 		case http.MethodPut:
-			handlers.UpdateTeamStats(w, r, svc)
+			handlers.UpdateTeamStats(w, r, repo)
 		case http.MethodDelete:
-			handlers.DeleteTeamStats(w, r, svc)
+			handlers.DeleteTeamStats(w, r, repo)
 		default:
 			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
@@ -33,6 +31,6 @@ func RegisterTeamStatsRoutes(mux *http.ServeMux, gormDB *gorm.DB) {
 			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed")
 			return
 		}
-		handlers.FilterTeamStats(w, r, svc)
+		handlers.FilterTeamStats(w, r, repo)
 	})
 }

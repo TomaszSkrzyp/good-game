@@ -1,4 +1,4 @@
-import { clearSession } from "../data/store";
+import { clearSession } from "../../data/store";
 
 const LogoutButton = () => {
   const handleLogout = () => {

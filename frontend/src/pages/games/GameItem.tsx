@@ -57,6 +57,8 @@ const GameItem: Component<GameItemProps> = (props) => {
   const [showStats, setShowStats] = createSignal(false);
   const [stats, setStats] = createSignal<GamePlayerStats | null>(null);
   const [isLoadingStats, setIsLoadingStats] = createSignal(false);
+  const [localShowScores, setLocalShowScores] = createSignal(false); 
+
   const q = () => props.game.gameQuality;
 
   const handleRating = async (val: number) => {
@@ -88,6 +90,10 @@ const GameItem: Component<GameItemProps> = (props) => {
   const openStats = async () => {
     await fetchGameStats();
     document.body.style.overflow = 'hidden';
+  };
+
+  const toggleLocalScores = () => {
+    setLocalShowScores(!localShowScores());
   };
 
   return (
@@ -152,22 +158,30 @@ const GameItem: Component<GameItemProps> = (props) => {
           <div class="text-[10px] font-bold text-gray-400 uppercase">
             {new Date(props.game.gameTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </div>
-        </div>
-
-        <Show when={props.game.status === "STATUS_FINAL"}>
-          
-          <div class="space-y-3 mb-4">
-            <TeamRow team={props.game.awayTeam} score={props.game.awayTeamPoints} hide={props.hideScores } />
-            <TeamRow team={props.game.homeTeam} score={props.game.homeTeamPoints} hide={props.hideScores} />
-          </div>
-
-          <button
+          <Show when={props.game.status === "STATUS_FINAL" && props.hideScores}>
+            <button
+              onClick={toggleLocalScores}
+              class="px-4 py-2 text-[10px] font-bold text-green-600 bg-green-50 rounded hover:bg-green-100 transition-colors"
+            >
+              {localShowScores() ? "Hide" : "Show"}
+            </button>
+            <button
             onClick={openStats}
             disabled={isLoadingStats()}
-            class="w-full px-3 py-2 mb-4 text-xs font-bold text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors disabled:opacity-50"
+            class="px-4 py-2 text-[10px] font-bold text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
           >
             {isLoadingStats() ? "Loading..." : "View Stats"}
           </button>
+          </Show>
+        </div>
+
+        <Show when={props.game.status === "STATUS_FINAL"}>
+          <div class="space-y-3 mb-4">
+            <TeamRow team={props.game.awayTeam} score={props.game.awayTeamPoints} hide={props.hideScores && !localShowScores()} />
+            <TeamRow team={props.game.homeTeam} score={props.game.homeTeamPoints} hide={props.hideScores && !localShowScores()} />
+          </div>
+
+          
 
           <div class="flex flex-wrap gap-1 mb-4">
             

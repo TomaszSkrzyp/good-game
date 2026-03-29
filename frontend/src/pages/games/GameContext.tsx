@@ -22,7 +22,6 @@ export const GameProvider: ParentComponent = (props) => {
           const json = await res.json();
           if (typeof json.hideScores === "boolean") {
             setHideScores(json.hideScores);
-            console.log("hideScores value from DB:", json.hideScores);
           }
           return; 
         }

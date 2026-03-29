@@ -10,7 +10,7 @@ const LoginPage: Component = () => {
   const navigate = useNavigate();
 
   onMount(() => {
-    if (auth.isLoggedIn) navigate("/profile");
+    if (auth.isLoggedIn) navigate("/games");
   });
 
   const handleSubmit = async (e: Event) => {

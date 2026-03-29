@@ -117,7 +117,7 @@ func FetchGamesByDate(gormDB *gorm.DB, dates string) error {
 	if err := json.NewDecoder(resp.Body).Decode(&apiRes); err != nil {
 		return fmt.Errorf("json decode error: %w", err)
 	}
-
+	log.Printf("Fetched %d events for date(s) %s", len(apiRes.Events), dates)
 	for _, event := range apiRes.Events {
 		saveESPNGame(gormDB, event)
 	}
@@ -300,8 +300,8 @@ func saveESPNGame(gormDB *gorm.DB, event ESPNEvent) {
 func parseGameTime(dateStr string) (time.Time, error) {
 	layouts := []string{
 		time.RFC3339,
-		"2006-01-02T15:04Z",        // ESPN specific (no seconds)
-		"2006-01-02T15:04:05.000Z", // Java/ESPN specific ms
+		"2006-01-02T15:04Z", // ESPN specific (no seconds)
+		"2006-01-02T15:04:05.000Z",
 	}
 
 	for _, layout := range layouts {

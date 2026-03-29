@@ -1,18 +1,9 @@
 import { Component, createResource, Show, createEffect } from "solid-js";
-import { auth, clearSession } from "../data/store";
+import { auth, clearSession, fetchWithAuth } from "../data/store";
 import { useNavigate } from "@solidjs/router";
-import { fetchModule } from "vite";
 
-const fetchUserData = async (token: string) => {
-  if (!token) return null;
-
-  const response = await fetch("/api/profile", {
-    headers: { "Authorization": `Bearer ${token}` }
-  });
-
-  if (response.status === 401) {
-    throw new Error("UNAUTHORIZED");
-  }
+const fetchUserData = async () => {
+  const response = await fetchWithAuth("/api/profile");
 
   if (!response.ok) throw new Error("Failed to fetch profile");
   return response.json();
@@ -20,7 +11,7 @@ const fetchUserData = async (token: string) => {
 
 const ProfilePage: Component = () => {
   const navigate = useNavigate();
-  const [data] = createResource(() => auth.token, fetchUserData);
+  const [data] = createResource(fetchUserData);
 
   createEffect(() => {
     console.log(auth);
@@ -29,10 +20,6 @@ const ProfilePage: Component = () => {
       return;
     }
 
-    if (data.error?.message === "UNAUTHORIZED") {
-      clearSession();
-      navigate("/login");
-    }
   });
 
   return (

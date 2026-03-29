@@ -5,6 +5,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ProfilePage from "./pages/ProfilePage";
 import GamesPage from "./pages/games/GamesPage";
 import Layout from "./components/Layout";
+import { todayStr } from "./utils/dateUtils";
+import { Navigate } from "@solidjs/router";
 
 const App = () => {
   return (
@@ -21,7 +23,8 @@ const App = () => {
           </Layout>
         )}
       />
-      <Route path="/games" component={() => <Layout><GamesPage /></Layout>} />
+      <Route path="/games/:date" component={GamesPage} />
+      <Route path="/games" component={() => <Navigate href={`/games/${todayStr()}`} />} /> // Redirect /games to /games/today
     </Router>
   );
 };

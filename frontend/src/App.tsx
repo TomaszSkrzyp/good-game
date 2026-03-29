@@ -23,8 +23,17 @@ const App = () => {
           </Layout>
         )}
       />
-      <Route path="/games/:date" component={GamesPage} />
-      <Route path="/games" component={() => <Navigate href={`/games/${todayStr()}`} />} /> // Redirect /games to /games/today
+      <Route
+        path="/games/:date"
+        component={() => (
+          <Layout>
+            <ProtectedRoute>
+              <GamesPage />
+            </ProtectedRoute>
+          </Layout>
+        )}
+      />
+      <Route path="/games" component={() => <Navigate href={`/games/${todayStr()}`} />} /> 
     </Router>
   );
 };

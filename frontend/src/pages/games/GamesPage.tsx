@@ -1,6 +1,6 @@
-import { Component, createSignal, createResource, For, Show, createEffect } from "solid-js";
+import { Component, createResource, For, Show, createEffect } from "solid-js";
 import { useParams, useNavigate } from "@solidjs/router";
-import { auth, fetchWithAuth } from "../../data/store";
+import { fetchWithAuth } from "../../data/store";
 import GameItem, { Game } from "./GameItem";
 import { useGameContext } from "./GameContext";
 import { todayStr } from "../../utils/dateUtils";
@@ -65,7 +65,7 @@ const GamesPage: Component = () => {
     <div class="max-w-4xl mx-auto p-4">
       <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <h1 class="text-3xl font-bold text-gray-800">NBA Schedule</h1>
-        <label class="ml-4 flex items-center gap-2 text-sm select-none">
+        <label class="ml-4 flex items-center gap-2 text-sm select-none cursor-pointer">
           <span class="text-xs text-gray-600">Hide scores</span>
           <div class="relative">
             <input
@@ -79,15 +79,15 @@ const GamesPage: Component = () => {
           </div>
         </label>
         <div class="flex items-center gap-2">
-          <button onClick={() => shiftDay(-1)} class="p-2 hover:bg-gray-100 rounded-full border">←</button>
+          <button onClick={() => shiftDay(-1)} class="p-2 hover:bg-gray-100 rounded-full border cursor-pointer">←</button>
           <input
             type="date"
             value={day()}
             onInput={(e) => navigate(`/games/${e.currentTarget.value}`)}
             class="px-3 py-2 border rounded-lg outline-none"
           />
-          <button onClick={() => shiftDay(1)} class="p-2 hover:bg-gray-100 rounded-full border">→</button>
-          <button onClick={() => navigate(`/games/${todayStr()}`)} class="ml-2 px-3 py-2 bg-gray-200 rounded-lg text-sm">Today</button>
+          <button onClick={() => shiftDay(1)} class="p-2 hover:bg-gray-100 rounded-full border cursor-pointer">→</button>
+          <button onClick={() => navigate(`/games/${todayStr()}`)} class="ml-2 px-3 py-2 bg-gray-200 rounded-lg text-sm cursor-pointer">Today</button>
         </div>
       </div>
 

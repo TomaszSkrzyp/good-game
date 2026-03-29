@@ -106,45 +106,64 @@ const GameItem: Component<GameItemProps> = (props) => {
 
       <Show when={showStats()}>
         <div 
-          class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" 
+          class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" 
           onClick={closeStats}
         >
           <div 
-            class="bg-white rounded-lg shadow-xl p-6 w-96 max-h-96 overflow-y-auto relative" 
+            class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto relative" 
             onClick={(e) => e.stopPropagation()}
           >
             <button 
               onClick={closeStats}
-              class="sticky top-0 right-0 absolute top-4 right-4 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-1 transition-colors"
+              class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-colors cursor-pointer"
+              title="Close"
             >
               ✕
             </button>
             
-            <h3 class="font-bold text-lg mb-4 pr-6">Game Stats</h3>
+            <h3 class="font-bold text-lg mb-6 text-center">Game Stats</h3>
             
             <Show when={isLoadingStats()}>
               <div class="flex justify-center py-8">
-                <div class="animate-spin h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full" />
+                <div class="animate-spin h-8 w-8 border-2 border-blue-500 border-t-transparent rounded-full" />
               </div>
             </Show>
 
             <Show when={stats() && !isLoadingStats()}>
-              <div class="space-y-4">
-                <div>
-                  <h4 class="font-bold text-sm text-gray-700 mb-2">{props.game.awayTeam.teamName}</h4>
-                  <div class="space-y-1 text-sm">
-                    <div class="flex justify-between"><span class="text-gray-600">Top Scorer:</span><span class="font-semibold">{stats()?.awayTopScorer} <span class="text-gray-400">({stats()?.awayTopScorerPts})</span></span></div>
-                    <div class="flex justify-between"><span class="text-gray-600">Top Assister:</span><span class="font-semibold">{stats()?.awayTopAssister} <span class="text-gray-400">({stats()?.awayTopAssists})</span></span></div>
-                    <div class="flex justify-between"><span class="text-gray-600">Top Rebounder:</span><span class="font-semibold">{stats()?.awayTopRebounder} <span class="text-gray-400">({stats()?.awayTopRebounds})</span></span></div>
+              <div class="space-y-6">
+                <div class="bg-gray-50 rounded-lg p-4">
+                  <h4 class="font-bold text-sm text-gray-700 mb-3">{props.game.awayTeam.teamName}</h4>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-600">Top Scorer:</span>
+                      <span class="font-semibold">{stats()?.awayTopScorer} <span class="text-gray-400">({stats()?.awayTopScorerPts})</span></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-600">Top Assister:</span>
+                      <span class="font-semibold">{stats()?.awayTopAssister} <span class="text-gray-400">({stats()?.awayTopAssists})</span></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-600">Top Rebounder:</span>
+                      <span class="font-semibold">{stats()?.awayTopRebounder} <span class="text-gray-400">({stats()?.awayTopRebounds})</span></span>
+                    </div>
                   </div>
                 </div>
 
-                <div class="border-t pt-4">
-                  <h4 class="font-bold text-sm text-gray-700 mb-2">{props.game.homeTeam.teamName}</h4>
-                  <div class="space-y-1 text-sm">
-                    <div class="flex justify-between"><span class="text-gray-600">Top Scorer:</span><span class="font-semibold">{stats()?.homeTopScorer} <span class="text-gray-400">({stats()?.homeTopScorerPts})</span></span></div>
-                    <div class="flex justify-between"><span class="text-gray-600">Top Assister:</span><span class="font-semibold">{stats()?.homeTopAssister} <span class="text-gray-400">({stats()?.homeTopAssists})</span></span></div>
-                    <div class="flex justify-between"><span class="text-gray-600">Top Rebounder:</span><span class="font-semibold">{stats()?.homeTopRebounder} <span class="text-gray-400">({stats()?.homeTopRebounds})</span></span></div>
+                <div class="bg-gray-50 rounded-lg p-4">
+                  <h4 class="font-bold text-sm text-gray-700 mb-3">{props.game.homeTeam.teamName}</h4>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-600">Top Scorer:</span>
+                      <span class="font-semibold">{stats()?.homeTopScorer} <span class="text-gray-400">({stats()?.homeTopScorerPts})</span></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-600">Top Assister:</span>
+                      <span class="font-semibold">{stats()?.homeTopAssister} <span class="text-gray-400">({stats()?.homeTopAssists})</span></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-600">Top Rebounder:</span>
+                      <span class="font-semibold">{stats()?.homeTopRebounder} <span class="text-gray-400">({stats()?.homeTopRebounds})</span></span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -159,19 +178,21 @@ const GameItem: Component<GameItemProps> = (props) => {
             {new Date(props.game.gameTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </div>
           <Show when={props.game.status === "STATUS_FINAL" && props.hideScores}>
-            <button
-              onClick={toggleLocalScores}
-              class="px-4 py-2 text-[10px] font-bold text-green-600 bg-green-50 rounded hover:bg-green-100 transition-colors"
-            >
-              {localShowScores() ? "Hide" : "Show"}
-            </button>
-            <button
-            onClick={openStats}
-            disabled={isLoadingStats()}
-            class="px-4 py-2 text-[10px] font-bold text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
-          >
-            {isLoadingStats() ? "Loading..." : "View Stats"}
-          </button>
+            <div class="flex gap-2">
+              <button
+                onClick={toggleLocalScores}
+                class="px-4 py-2 text-[10px] font-bold text-green-600 bg-green-50 rounded hover:bg-green-100 transition-colors cursor-pointer"
+              >
+                {localShowScores() ? "Hide" : "Show"}
+              </button>
+              <button
+                onClick={openStats}
+                disabled={isLoadingStats()}
+                class="px-4 py-2 text-[10px] font-bold text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors cursor-pointer"
+              >
+                {isLoadingStats() ? "Loading..." : "View Stats"}
+              </button>
+            </div>
           </Show>
         </div>
 
@@ -215,7 +236,7 @@ const GameItem: Component<GameItemProps> = (props) => {
             <For each={[1, 2, 3, 4, 5]}>{(v) => (
               <button 
                 onClick={() => handleRating(v)}
-                class={`w-7 h-7 rounded text-xs font-bold transition-colors ${props.game.rating === v ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-400 hover:bg-gray-200'}`}
+                class={`w-7 h-7 rounded text-xs font-bold transition-colors cursor-pointer ${props.game.rating === v ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-400 hover:bg-gray-200'}`}
               >{v}</button>
             )}</For>
           </div>

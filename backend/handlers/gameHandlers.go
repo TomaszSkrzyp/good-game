@@ -34,8 +34,14 @@ func GetGameByID(w http.ResponseWriter, r *http.Request, repo *db.GameRepository
 		ErrorResponse(w, http.StatusBadRequest, "invalid or missing id")
 		return
 	}
+	var userID uint
+	if val := r.Context().Value(middleware.UserIDKey); val != nil {
+		if id, ok := val.(uint); ok {
+			userID = id
+		}
+	}
 
-	game, err := repo.GetByID(uint(parsed))
+	game, err := repo.GetByID(uint(parsed), userID)
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "could not retrieve game")
 		return
@@ -157,7 +163,14 @@ func GetGameStats(w http.ResponseWriter, r *http.Request, repo *db.GameRepositor
 		return
 	}
 
-	game, err := repo.GetByID(uint(gameIDParsed))
+	var userID uint
+	if val := r.Context().Value(middleware.UserIDKey); val != nil {
+		if id, ok := val.(uint); ok {
+			userID = id
+		}
+	}
+
+	game, err := repo.GetByID(uint(gameIDParsed), userID)
 	if err != nil || game == nil {
 		ErrorResponse(w, http.StatusNotFound, "Game not found")
 		return
@@ -168,7 +181,6 @@ func GetGameStats(w http.ResponseWriter, r *http.Request, repo *db.GameRepositor
 		return
 	}
 
-	// game.GameTime is already time.Time, no need to parse
 	stats, err := fetch.FetchGamePlayerStats(game.ESPNID, game.GameTime)
 	if err != nil {
 		log.Printf("Error fetching stats for ESPN ID %s: %v", game.ESPNID, err)

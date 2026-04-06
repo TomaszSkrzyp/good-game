@@ -17,6 +17,11 @@ func RegisterGameRoutes(mux *http.ServeMux, gormDB *gorm.DB) {
 		case http.MethodGet:
 			handlers.FilterGames(w, r, repo)
 		case http.MethodPost:
+			val := r.Context().Value(middleware.UserIDKey)
+			if val == nil {
+				handlers.ErrorResponse(w, http.StatusUnauthorized, "You must be logged in to create games")
+				return
+			}
 			handlers.CreateGame(w, r, repo)
 		default:
 			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -27,10 +32,18 @@ func RegisterGameRoutes(mux *http.ServeMux, gormDB *gorm.DB) {
 		switch r.Method {
 		case http.MethodGet:
 			handlers.GetGameByID(w, r, repo)
-		case http.MethodPut:
-			handlers.UpdateGame(w, r, repo)
-		case http.MethodDelete:
-			handlers.DeleteGame(w, r, repo)
+		case http.MethodPut, http.MethodDelete:
+			val := r.Context().Value(middleware.UserIDKey)
+			if val == nil {
+				handlers.ErrorResponse(w, http.StatusUnauthorized, "Administrative action requires login")
+				return
+			}
+
+			if r.Method == http.MethodPut {
+				handlers.UpdateGame(w, r, repo)
+			} else {
+				handlers.DeleteGame(w, r, repo)
+			}
 		default:
 			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}

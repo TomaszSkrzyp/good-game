@@ -19,9 +19,21 @@ func (r *GameRepository) Create(game *models.Game) error {
 	return r.db.Create(game).Error
 }
 
-func (r *GameRepository) GetByID(id uint) (*models.Game, error) {
+func (r *GameRepository) GetByID(id uint, userID uint) (*models.Game, error) {
 	var game models.Game
-	if err := r.db.First(&game, id).Error; err != nil {
+
+	err := r.db.Model(&models.Game{}).
+		Select("games.*, "+
+			"COALESCE(AVG(all_reactions.liked), 0) as avg_rating, "+
+			"COUNT(all_reactions.id) as rating_count, "+
+			"(SELECT liked FROM user_reactions WHERE game_id = games.id AND user_id = ?) as rating", userID). // FIXED HERE
+		Joins("LEFT JOIN user_reactions AS all_reactions ON all_reactions.game_id = games.id").
+		Group("games.id").
+		Preload("HomeTeam").
+		Preload("AwayTeam").
+		First(&game, id).Error
+
+	if err != nil {
 		return nil, err
 	}
 	return &game, nil
@@ -43,26 +55,30 @@ func (r *GameRepository) Filter(date string, homeID, awayID *uint, minRating, ma
 	var games []models.Game
 	offset := (page - 1) * limit
 
-	query := r.db.Model(&models.Game{}).Preload("HomeTeam").Preload("AwayTeam")
-
+	query := r.db.Model(&models.Game{}).
+		Select("games.*, "+
+			"COALESCE(AVG(all_reactions.liked), 0) as avg_rating, "+
+			"COUNT(all_reactions.id) as rating_count, "+
+			"(SELECT liked FROM user_reactions WHERE game_id = games.id AND user_id = ?) as rating", userID).
+		Joins("LEFT JOIN user_reactions AS all_reactions ON all_reactions.game_id = games.id").
+		Group("games.id").
+		Preload("HomeTeam").
+		Preload("AwayTeam")
 	if date != "" {
 		query = query.Where("DATE(game_time AT TIME ZONE 'America/New_York') = ?", date)
 	}
-
 	if homeID != nil {
 		query = query.Where("home_team_id = ?", *homeID)
 	}
-
 	if awayID != nil {
 		query = query.Where("away_team_id = ?", *awayID)
 	}
 
 	if minRating != nil {
-		query = query.Where("rating >= ?", *minRating)
+		query = query.Having("AVG(all_reactions.liked) >= ?", *minRating)
 	}
-
 	if maxRating != nil {
-		query = query.Where("rating <= ?", *maxRating)
+		query = query.Having("AVG(all_reactions.liked) <= ?", *maxRating)
 	}
 
 	if sort != "" {
@@ -72,6 +88,5 @@ func (r *GameRepository) Filter(date string, homeID, awayID *uint, minRating, ma
 	}
 
 	err := query.Offset(offset).Limit(limit).Find(&games).Error
-
 	return games, err
 }

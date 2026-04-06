@@ -9,6 +9,7 @@ import (
 
 	"github.com/tomaszSkrzyp/good-game/db"
 	"github.com/tomaszSkrzyp/good-game/fetch"
+	"github.com/tomaszSkrzyp/good-game/middleware"
 	"github.com/tomaszSkrzyp/good-game/routes"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -47,7 +48,8 @@ func main() {
 	// Start the web server
 	router := routes.NewRouter(gormDB)
 	fmt.Printf("Server running on: http://localhost:%s\n", port)
-	if err := http.ListenAndServe(":"+port, router); err != nil {
-		log.Fatalf("server failed to start: %v", err)
+
+	if err := http.ListenAndServe(":"+port, middleware.Recovery(router)); err != nil {
+		log.Fatal(err)
 	}
 }

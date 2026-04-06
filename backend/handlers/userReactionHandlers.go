@@ -25,8 +25,8 @@ func CreateUserReaction(w http.ResponseWriter, r *http.Request, repo *db.UserRea
 
 	ur.UserID = userID
 
-	if ur.Liked < 1 || ur.Liked > 10 {
-		ErrorResponse(w, http.StatusBadRequest, "liked must be between 1 and 10")
+	if ur.Liked < 1 || ur.Liked > 5 {
+		ErrorResponse(w, http.StatusBadRequest, "rating must be between 1 and 5")
 		return
 	}
 
@@ -35,7 +35,18 @@ func CreateUserReaction(w http.ResponseWriter, r *http.Request, repo *db.UserRea
 		return
 	}
 
-	JSONResponse(w, http.StatusOK, ur)
+	//fetch updated stats and return
+	avg, count, err := repo.GetStatsForGame(ur.GameID)
+	if err != nil {
+		JSONResponse(w, http.StatusOK, ur)
+		return
+	}
+
+	JSONResponse(w, http.StatusOK, map[string]interface{}{
+		"rating":      ur.Liked,
+		"avgRating":   avg,
+		"ratingCount": count,
+	})
 }
 
 func GetUserReactionByID(w http.ResponseWriter, r *http.Request, repo *db.UserReactionRepository) {

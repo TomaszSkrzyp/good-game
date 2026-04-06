@@ -2,6 +2,8 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -108,6 +110,24 @@ func OptionalAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		next(w, r)
 	}
 }
+
+func Recovery(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				log.Printf("PANIC RECOVERED: %v\n", err)
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{
+					"error": "Internal Server Error (Panic Recovered)",
+				})
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
+}
+
 func EnableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")

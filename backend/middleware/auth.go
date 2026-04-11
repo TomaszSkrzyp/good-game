@@ -3,7 +3,6 @@ package middleware
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -13,11 +12,13 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
+type contextKey string
+
+const UserIDKey contextKey = "userID"
+
 var JwtKey = []byte(os.Getenv("JWT_KEY"))
 
-const UserIDKey = "userID"
-
-// GenerateToken creates JWT tokens with specific expiration
+// create jwt with exp
 func GenerateToken(userID uint, username string, duration time.Duration) (string, error) {
 	claims := jwt.MapClaims{
 		"id":   userID,
@@ -28,7 +29,7 @@ func GenerateToken(userID uint, username string, duration time.Duration) (string
 	return token.SignedString(JwtKey)
 }
 
-// ValidateToken validates JWT and returns claims
+// check if token is valid
 func ValidateToken(tokenString string) (jwt.MapClaims, error) {
 	claims := jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
@@ -42,23 +43,19 @@ func ValidateToken(tokenString string) (jwt.MapClaims, error) {
 	return claims, nil
 }
 
-// GetUserIDFromContext safely extracts userID from context
+// helper to get id from context
 func GetUserIDFromContext(r *http.Request) uint {
 	val := r.Context().Value(UserIDKey)
 	if val == nil {
 		return 0
 	}
-	fmt.Println(val)
-	switch v := val.(type) {
-	case uint:
-		return v
-
-	default:
-		return 0
+	if id, ok := val.(uint); ok {
+		return id
 	}
+	return 0
 }
 
-// AuthMiddleware requires valid JWT token
+// strict auth - returns 401 if no token
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -90,37 +87,33 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// OptionalAuthMiddleware extracts userID if token present, but doesn't require it
+// soft auth - doesn't block if guest
 func OptionalAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
-		if authHeader != "" {
-			parts := strings.Split(authHeader, " ")
-			if len(parts) == 2 && parts[0] == "Bearer" {
-				claims, err := ValidateToken(parts[1])
-				if err == nil {
-					if userID, ok := claims["id"].(float64); ok {
-						ctx := context.WithValue(r.Context(), UserIDKey, uint(userID))
-						r = r.WithContext(ctx)
-					}
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+			if claims, err := ValidateToken(tokenString); err == nil {
+				if userID, ok := claims["id"].(float64); ok {
+					ctx := context.WithValue(r.Context(), UserIDKey, uint(userID))
+					r = r.WithContext(ctx)
 				}
 			}
 		}
-
 		next(w, r)
 	}
 }
 
+// catch panics so server doesn't die
 func Recovery(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				log.Printf("PANIC RECOVERED: %v\n", err)
-
+				log.Printf("panic: %v\n", err)
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{
-					"error": "Internal Server Error (Panic Recovered)",
+					"error": "internal server error",
 				})
 			}
 		}()
@@ -128,9 +121,14 @@ func Recovery(next http.Handler) http.Handler {
 	})
 }
 
+// cors setup for dev/prod
 func EnableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+		origin := os.Getenv("ALLOWED_ORIGIN")
+		if origin == "" {
+			origin = "http://localhost:5173"
+		}
+		w.Header().Set("Access-Control-Allow-Origin", origin)
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Authorization")
 

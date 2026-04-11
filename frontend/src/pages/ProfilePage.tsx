@@ -1,17 +1,29 @@
-import { Component, createResource, Show, createEffect } from "solid-js";
-import { auth, clearSession, fetchWithAuth } from "../data/store";
+import { Component, createResource, Show, createEffect, For } from "solid-js";
+import { auth} from "../data/store";
+import { api } from "../utils/api";
 import { useNavigate } from "@solidjs/router";
+interface UserData {
+  userName: string;
+  email: string;
+  userReactions: UserReactions[];
+}
+interface UserReactions{
+  id: number;
+  gameId: number;
+  rating: number;
+  createdAt: string;
+}
+const fetchUserData = async (): Promise<UserData> => {
+  const profile = await api.get('profile').json<UserData>();
+  //id gets taken from ctx
+  const userReactions = await api.get('userReactions').json<UserReactions[]>();
 
-const fetchUserData = async () => {
-  const response = await fetchWithAuth("/api/profile");
-
-  if (!response.ok) throw new Error("Failed to fetch profile");
-  return response.json();
+  return { ...profile, userReactions };
 };
 
 const ProfilePage: Component = () => {
   const navigate = useNavigate();
-  const [data] = createResource(fetchUserData);
+  const [data] = createResource<UserData>(fetchUserData);
 
   createEffect(() => {
     console.log(auth);
@@ -48,22 +60,28 @@ const ProfilePage: Component = () => {
             <div class="space-y-6">
               <div class="border-b border-gray-100 pb-4">
                 <label class="text-xs uppercase tracking-wider text-gray-400 font-bold">Username</label>
-                <p class="text-lg text-gray-700 font-medium">{data().userName}</p>
+                <p class="text-lg text-gray-700 font-medium">{data()?.userName}</p>
               </div>
               <div class="border-b border-gray-100 pb-4">
                 <label class="text-xs uppercase tracking-wider text-gray-400 font-bold">Email Address</label>
-                <p class="text-lg text-gray-700 font-medium">{data().email}</p>
-              </div>
-              <div>
-                <label class="text-xs uppercase tracking-wider text-gray-400 font-bold">Account ID</label>
-                <p class="text-sm text-gray-400 font-mono">#{data().id}</p>
+                <p class="text-lg text-gray-700 font-medium">{data()?.email}</p>
               </div>
             </div>
           </Show>
-        </div>
+          <For each={data()?.userReactions}>{(reaction) => (
+            <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <p class="text-sm text-gray-500">Reaction ID: {reaction.id}</p>
+              <p class="text-sm text-gray-500">Game ID: {reaction.gameId}</p>
+              <p class="text-sm text-gray-500">Rating: {reaction.rating}</p>
+              <p class="text-sm text-gray-500">Created At: {new Date(reaction.createdAt).toLocaleString()}</p>
+
+            </div>
+          )}</For>
       </div>
     </div>
-  );
+    </div>
+    );
 };
+  
 
 export default ProfilePage;

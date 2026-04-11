@@ -16,6 +16,7 @@
     "@solidjs/router": "^0.15.4",
     "@tailwindcss/vite": "^4.1.18",
     "jwt-decode": "^4.0.0",
+    "ky": "^2.0.0",
     "solid-js": "^1.9.10"
   },
   "devDependencies": {

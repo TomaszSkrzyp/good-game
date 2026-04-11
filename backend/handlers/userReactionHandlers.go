@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -155,14 +156,23 @@ func DeleteUserReaction(w http.ResponseWriter, r *http.Request, repo *db.UserRea
 func FilterUserReactions(w http.ResponseWriter, r *http.Request, repo *db.UserReactionRepository) {
 	q := r.URL.Query()
 
-	userID, _ := r.Context().Value(middleware.UserIDKey).(uint)
+	ctxID, _ := r.Context().Value(middleware.UserIDKey).(uint)
+
+	var targetUserID uint
 
 	if v := q.Get("userId"); v != "" {
 		if p, err := strconv.ParseUint(v, 10, 64); err == nil {
-			userID = uint(p)
+			targetUserID = uint(p)
 		}
+	} else {
+		targetUserID = ctxID
 	}
-
+	fmt.Println(targetUserID)
+	// security Check: If a user is trying to see a specific ID that isn't theirs, throw 403
+	if targetUserID == 0 {
+		ErrorResponse(w, http.StatusBadRequest, "no user identified")
+		return
+	}
 	var gameID uint
 	if v := q.Get("gameId"); v != "" {
 		if p, err := strconv.ParseUint(v, 10, 64); err == nil {
@@ -187,7 +197,7 @@ func FilterUserReactions(w http.ResponseWriter, r *http.Request, repo *db.UserRe
 		limit = 50
 	}
 
-	list, err := repo.Filter(userID, gameID, likedPtr, page, limit)
+	list, err := repo.Filter(targetUserID, gameID, likedPtr, page, limit)
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "failed to fetch reactions")
 		return

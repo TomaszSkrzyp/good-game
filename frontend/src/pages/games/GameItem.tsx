@@ -1,5 +1,6 @@
 import { Component, createSignal, Show, For } from "solid-js";
 import { auth } from "../../data/store";
+import { api } from "../../utils/api";
 
 interface Team {
   abbreviation: string;
@@ -78,17 +79,18 @@ const GameItem: Component<GameItemProps> = (props) => {
   };
 
   const fetchGameStats = async () => {
-    try {
-      const response = await fetch(`/api/game/stats?gameId=${props.game.id}`);
-      if (!response.ok) throw new Error("failed to fetch stats");
-      const data = await response.json();
-      setStats(data);
-      setShowStats(true);
-      document.body.style.overflow = 'hidden';
-    } catch (error) {
-      console.error("stats error:", error);
-    }
-  };
+  try {
+    const data = await api.get('game/stats', {
+      searchParams: { gameId: props.game.id }
+    }).json<GamePlayerStats>();
+
+    setStats(data);
+    setShowStats(true);
+    document.body.style.overflow = 'hidden';
+  } catch (error) {
+    console.error("Stats error:", error);
+  }
+};
 
   const closeStats = () => {
     setShowStats(false);

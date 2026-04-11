@@ -21,31 +21,31 @@ func main() {
 
 	gormDB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		log.Fatalf("error: couldn't connect to pg: %v", err)
 	}
 
 	db.Initialize(gormDB)
-	log.Println("Connected to database successfully")
+	log.Println("db connection ok")
 
-	// Run fetch cycle every 15 minutes
+	// run every 15 mins
 	ticker := time.NewTicker(15 * time.Minute)
 	defer ticker.Stop()
 
-	// Run immediately on startup
 	runFetchCycle(gormDB)
 
 	for range ticker.C {
 		runFetchCycle(gormDB)
 	}
 }
-func runFetchCycle(gormDB *gorm.DB) error {
-	log.Println("Starting fetch cycle...")
 
-	// Get all unfinished games (status != "STATUS_FINAL") from any past date
+func runFetchCycle(gormDB *gorm.DB) error {
+	log.Println("start fetch cycle")
+
 	var unfinishedGames []struct {
 		Date time.Time
 	}
 
+	// look for games that should have finished but haven't updated yet
 	result := gormDB.
 		Model(&models.Game{}).
 		Where("status != 'STATUS_FINAL' AND game_time < ?", time.Now()).
@@ -58,9 +58,7 @@ func runFetchCycle(gormDB *gorm.DB) error {
 		return result.Error
 	}
 
-	// If there are unfinished games, fetch them as a range
 	if len(unfinishedGames) > 0 {
-		// Find min and max dates
 		minDate := unfinishedGames[0].Date
 		maxDate := unfinishedGames[0].Date
 		for _, record := range unfinishedGames {
@@ -72,25 +70,26 @@ func runFetchCycle(gormDB *gorm.DB) error {
 			}
 		}
 
+		// refresh past games to get final scores
 		rangeStr := fmt.Sprintf("%s-%s", minDate.Format("20060102"), maxDate.Format("20060102"))
-		log.Printf("Fetching games for range: %s to %s (updating unfinished)", minDate.Format("2006-01-02"), maxDate.Format("2006-01-02"))
+		log.Printf("updating unfinished games for range: %s to %s", minDate.Format("2006-01-02"), maxDate.Format("2006-01-02"))
 		if err := fetch.FetchGamesByDate(gormDB, rangeStr); err != nil {
-			log.Printf("error fetching games for range %s: %v", rangeStr, err)
+			log.Printf("failed to refresh range %s: %v", rangeStr, err)
 			return err
 		}
 	}
 
-	// Fetch a range including present and future games (e.g., today to next 7 days)
+	// grab schedule for the next week
 	start := time.Now()
 	end := time.Now().AddDate(0, 0, 7)
 	rangeStr := fmt.Sprintf("%s-%s", start.Format("20060102"), end.Format("20060102"))
 
-	log.Printf("Fetching games for range: %s to %s (new/upcoming games)", start.Format("2006-01-02"), end.Format("2006-01-02"))
+	log.Printf("fetching upcoming games: %s to %s", start.Format("2006-01-02"), end.Format("2006-01-02"))
 	if err := fetch.FetchGamesByDate(gormDB, rangeStr); err != nil {
-		log.Printf("error fetching games for range %s: %v", rangeStr, err)
+		log.Printf("failed to fetch upcoming %s: %v", rangeStr, err)
 		return err
 	}
 
-	log.Println("Fetch cycle completed")
+	log.Println("cycle finished")
 	return nil
 }

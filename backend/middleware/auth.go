@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -47,12 +48,11 @@ func GetUserIDFromContext(r *http.Request) uint {
 	if val == nil {
 		return 0
 	}
-
+	fmt.Println(val)
 	switch v := val.(type) {
 	case uint:
 		return v
-	case float64:
-		return uint(v)
+
 	default:
 		return 0
 	}

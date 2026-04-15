@@ -1,3 +1,5 @@
+
+**WIP**
 # 🏀 **Good Game**
 
 **Good Game** is a **Go-based web application** designed for NBA fans who want to find the **best games to watch** without having the results spoiled. Whether you're looking for a close finish or a historic performance, the app calculates a proprietary **Quality Score** for every game. It leverages a **high-concurrency backend** and a **PostgreSQL database** to aggregate real-time data from the NBA ecosystem.

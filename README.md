@@ -95,10 +95,10 @@ While the algorithm provides an objective "Watchability" score, Good Game also c
 - **Tailwind CSS** – Custom utility-first styling for a polished, responsive, and modern dark-themed UI.
 - **ESPN API Integration** – Provides the raw data feed for schedules, box scores, and play-by-play updates.
 
-📜 License
+### **📜 License**
 This project is licensed under the MIT License, allowing for free use, modification, and distribution.
 
-🔗 Contributing
+### **🔗 Contributing**
 I welcome contributions to enhance the scoring algorithm or the UI!
 Fork the repository to your GitHub account.
 Create a new feature branch:
@@ -108,5 +108,5 @@ git checkout -b feature/amazing-feature
 Make your changes and commit them with a descriptive message.
 Push to the branch and open a Pull Request.
 
-📧 Contact
+### **📧 Contact**
 For questions, bug reports, or suggestions, please reach out via the  page. We value your feedback!

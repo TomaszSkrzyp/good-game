@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/tomaszSkrzyp/good-game/db"
@@ -235,9 +236,16 @@ func saveESPNGame(gormDB *gorm.DB, event ESPNEvent) {
 			away = c
 		}
 	}
+	getAbbrID := func(abbr string) uint {
+		// if the abbreviation contains a slash, it's a TBD matchup
+		if strings.Contains(abbr, "/") {
+			return db.TeamAbbrToIDMap["TBD"]
+		}
+		return db.TeamAbbrToIDMap[abbr]
+	}
 
-	homeID := db.TeamAbbrToIDMap[home.Team.Abbreviation]
-	awayID := db.TeamAbbrToIDMap[away.Team.Abbreviation]
+	homeID := getAbbrID(home.Team.Abbreviation)
+	awayID := getAbbrID(away.Team.Abbreviation)
 
 	if homeID == 0 || awayID == 0 {
 		log.Printf("Skip: Unknown team abbr %s or %s", home.Team.Abbreviation, away.Team.Abbreviation)

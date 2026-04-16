@@ -37,6 +37,7 @@ func SeedTeams(db *gorm.DB) {
 			{"Detroit Pistons", "DET"}, {"Indiana Pacers", "IND"}, {"Miami Heat", "MIA"},
 			{"Milwaukee Bucks", "MIL"}, {"New York Knicks", "NY"}, {"Orlando Magic", "ORL"},
 			{"Philadelphia 76ers", "PHI"}, {"Toronto Raptors", "TOR"}, {"Washington Wizards", "WSH"},
+			{"TBD", "TBD"},
 		},
 		"Western Conference": {
 			{"Dallas Mavericks", "DAL"}, {"Denver Nuggets", "DEN"}, {"Golden State Warriors", "GS"},

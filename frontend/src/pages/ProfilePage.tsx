@@ -1,5 +1,5 @@
 import { Component, createResource, Show, createEffect, For } from "solid-js";
-import { auth} from "../data/store";
+import { auth, logout} from "../data/store";
 import { api } from "../utils/api";
 import { useNavigate } from "@solidjs/router";
 interface UserData {
@@ -26,12 +26,15 @@ const ProfilePage: Component = () => {
   const [data] = createResource<UserData>(fetchUserData);
 
   createEffect(() => {
-    console.log(auth);
     if (!auth.token) {
-      navigate("/login");
+      navigate("/");
       return;
     }
 
+    if (data.error) {
+      console.warn("API connection failed. Clearing zombie session...", data.error);
+      logout();
+    }
   });
 
   return (

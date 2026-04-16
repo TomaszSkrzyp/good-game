@@ -1,6 +1,6 @@
-import { createContext, useContext, createSignal, onMount, ParentComponent } from "solid-js";
+import { createContext, useContext, createSignal, createEffect, ParentComponent } from "solid-js";
 import { auth } from "../../data/store";
-import { api } from "../../utils/api"; // Your custom Ky instance
+import { api } from "../../utils/api";
 
 interface GameContextType {
   hideScores: () => boolean;
@@ -16,27 +16,27 @@ const GameContext = createContext<GameContextType | undefined>(undefined);
 export const GameProvider: ParentComponent = (props) => {
   const [hideScores, setHideScores] = createSignal<boolean>(false);
 
-  onMount(async () => {
-    let remoteLoaded = false;
-
+  createEffect(async () => {
+    
     if (auth.isLoggedIn) {
       try {
-        console.log("Fetching user settings from API...");
+        console.log("User logged in. Fetching settings from API...");
         const settings = await api.get("userSettings").json<UserSettings>();
         
         if (typeof settings.hideScores === "boolean") {
           setHideScores(settings.hideScores);
-          remoteLoaded = true;
         }
       } catch (error) {
         console.warn("Failed to fetch remote settings, falling back to local.", error);
       }
-    }
-
-    if (!remoteLoaded && typeof window !== "undefined") {
-      const stored = localStorage.getItem("hideScores");
-      if (stored !== null) {
-        setHideScores(stored === "1");
+    } else {
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem("hideScores");
+        if (stored !== null) {
+          setHideScores(stored === "1");
+        } else {
+          setHideScores(false); 
+        }
       }
     }
   });

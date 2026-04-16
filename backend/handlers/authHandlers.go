@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -67,13 +67,14 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, us *services.UserServi
 		ErrorResponse(w, http.StatusInternalServerError, "Failed to create refresh token")
 		return
 	}
+	isProduction := os.Getenv("APP_ENV") == "production"
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    refreshToken,
 		Expires:  time.Now().Add(7 * 24 * time.Hour),
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   isProduction,
 		Path:     "/",
 		SameSite: http.SameSiteLaxMode,
 	})
@@ -111,7 +112,6 @@ func RefreshHandler(w http.ResponseWriter, r *http.Request, us *services.UserSer
 
 func GetProfileHandler(w http.ResponseWriter, r *http.Request, us *services.UserService) {
 	userID := middleware.GetUserIDFromContext(r)
-	fmt.Println(userID)
 	if userID == 0 {
 		ErrorResponse(w, http.StatusUnauthorized, "Auth context missing")
 		return

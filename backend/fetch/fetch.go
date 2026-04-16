@@ -258,17 +258,20 @@ func saveESPNGame(gormDB *gorm.DB, event ESPNEvent) {
 		return
 	}
 	if event.Status.Type.Name != "STATUS_FINAL" {
-		fmt.Printf(`Skipping unfinished game %s with status %s of %s and teams %s vs %s	`, event.ID, event.Status.Type.Name, event.Date, home.Team.Abbreviation, away.Team.Abbreviation)
+		fmt.Printf(`Skipping unfinished game %s with status %s of %s and teams %s vs %s `+"\n", event.ID, event.Status.Type.Name, event.Date, home.Team.Abbreviation, away.Team.Abbreviation)
 
 		err = gormDB.Where(models.Game{
-			HomeTeamID: homeID,
+			ESPNID: event.ID,
+		}).Assign(models.Game{
+			HomeTeamID: homeID, // update these fields in case they changed from TBD
 			AwayTeamID: awayID,
 			GameTime:   parsedTime,
-		}).Assign(models.Game{
-
-			ESPNID: event.ID,
-			Status: event.Status.Type.Name,
+			Status:     event.Status.Type.Name,
 		}).FirstOrCreate(&models.Game{}).Error
+
+		if err != nil {
+			log.Printf("Database error saving unfinished game %s: %v", event.ID, err)
+		}
 		return
 	}
 	hScore, _ := strconv.Atoi(home.Score)
@@ -287,15 +290,15 @@ func saveESPNGame(gormDB *gorm.DB, event ESPNEvent) {
 	}
 	gameQuality := calculateFinalQuality(hScore, aScore, hQs, aQs, home.Leaders, away.Leaders)
 
-	// Transactional Upsert
+	// Transactional Upsert for Finalized Games
 	err = gormDB.Where(models.Game{
-		HomeTeamID: homeID,
-		AwayTeamID: awayID,
-		GameTime:   parsedTime,
+		ESPNID: event.ID,
 	}).Assign(models.Game{
+		HomeTeamID:     homeID,
+		AwayTeamID:     awayID,
+		GameTime:       parsedTime,
 		HomeTeamPoints: uint(hScore),
 		AwayTeamPoints: uint(aScore),
-		ESPNID:         event.ID,
 		GameQuality:    gameQuality,
 		Status:         event.Status.Type.Name,
 	}).FirstOrCreate(&models.Game{}).Error

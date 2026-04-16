@@ -19,7 +19,7 @@ const Header: Component = () => {
                 href="/" 
                 class="px-4 py-2 text-sm font-medium hover:text-blue-400 transition-colors"
               >
-                Login
+                Sign In
               </A>
               <A 
                 href="/register" 

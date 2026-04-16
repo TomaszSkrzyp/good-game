@@ -16,7 +16,16 @@ type contextKey string
 
 const UserIDKey contextKey = "userID"
 
-var JwtKey = []byte(os.Getenv("JWT_KEY"))
+var JwtKey []byte
+
+func init() {
+	secret := os.Getenv("JWT_KEY")
+	if secret == "" {
+		// crash the server immediately if the secret is missing
+		log.Fatal("CRITICAL SECURITY ERROR: JWT_KEY environment variable is not set. Refusing to start.")
+	}
+	JwtKey = []byte(secret)
+}
 
 // create jwt with exp
 func GenerateToken(userID uint, username string, duration time.Duration) (string, error) {
@@ -129,6 +138,7 @@ func EnableCORS(next http.Handler) http.Handler {
 			origin = "http://localhost:5173"
 		}
 		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Authorization")
 

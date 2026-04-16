@@ -37,7 +37,7 @@ export const setToken = (token: string) => {
 
 export const logout = () => {
   clearSession();
-  window.location.href = '/login';
+  window.location.href = '/';
 };
 
 export const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {

@@ -1,24 +1,34 @@
 import { Component, createResource, Show, createEffect, For } from "solid-js";
-import { auth, logout} from "../data/store";
-import { api } from "../utils/api";
+import { auth, logout } from "../../data/store";
+import { api } from "../../utils/api";
 import { useNavigate } from "@solidjs/router";
-interface UserData {
-  userName: string;
-  email: string;
-  userReactions: UserReactions[];
-}
-interface UserReactions{
+import ReactionItem from "./ReactionItem";
+
+interface UserReaction {
   id: number;
   gameId: number;
   rating: number;
   createdAt: string;
+  game: {
+    homeTeam: { teamName: string };
+    awayTeam: { teamName: string };
+  };
 }
-const fetchUserData = async (): Promise<UserData> => {
-  const profile = await api.get('profile').json<UserData>();
-  //id gets taken from ctx
-  const userReactions = await api.get('userReactions').json<UserReactions[]>();
 
-  return { ...profile, userReactions };
+interface UserData {
+  userName: string;
+  email: string;
+  userReactions: UserReaction[];
+}
+
+const fetchUserData = async (): Promise<UserData> => {
+  const profile = await api.get('profile').json<any>();
+  const userReactions = await api.get('userReactions').json<UserReaction[]>();
+  return { 
+    userName: profile.userName, 
+    email: profile.email, 
+    userReactions 
+  };
 };
 
 const ProfilePage: Component = () => {
@@ -26,14 +36,10 @@ const ProfilePage: Component = () => {
   const [data] = createResource<UserData>(fetchUserData);
 
   createEffect(() => {
-    if (!auth.token) {
-      navigate("/");
-      return;
-    }
-
+    if (!auth.token) navigate("/");
     if (data.error) {
-      console.warn("API connection failed. Clearing zombie session...", data.error);
       logout();
+      navigate("/");
     }
   });
 
@@ -47,18 +53,9 @@ const ProfilePage: Component = () => {
               {data()?.userName?.slice(0, 2) || "?"}
             </div>
           </div>
+
           <h1 class="text-3xl font-bold text-gray-800 mb-6">User Profile</h1>
-          <Show when={data.loading}>
-            <div class="animate-pulse space-y-4">
-              <div class="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div class="h-4 bg-gray-200 rounded w-1/2"></div>
-            </div>
-          </Show>
-          <Show when={data.error}>
-            <div class="bg-red-50 text-red-600 p-4 rounded-lg border border-red-100">
-              {data.error.message}
-            </div>
-          </Show>
+
           <Show when={data()}>
             <div class="space-y-6">
               <div class="border-b border-gray-100 pb-4">
@@ -69,22 +66,21 @@ const ProfilePage: Component = () => {
                 <label class="text-xs uppercase tracking-wider text-gray-400 font-bold">Email Address</label>
                 <p class="text-lg text-gray-700 font-medium">{data()?.email}</p>
               </div>
+
+              <div class="mt-8">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Activity History</h2>
+                <For each={data()?.userReactions} fallback={<p class="text-gray-500 italic">No ratings yet.</p>}>
+                  {(reaction) => (
+                    <ReactionItem reaction={reaction} />
+                  )}
+                </For>
+              </div>
             </div>
           </Show>
-          <For each={data()?.userReactions}>{(reaction) => (
-            <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <p class="text-sm text-gray-500">Reaction ID: {reaction.id}</p>
-              <p class="text-sm text-gray-500">Game ID: {reaction.gameId}</p>
-              <p class="text-sm text-gray-500">Rating: {reaction.rating}</p>
-              <p class="text-sm text-gray-500">Created At: {new Date(reaction.createdAt).toLocaleString()}</p>
-
-            </div>
-          )}</For>
+        </div>
       </div>
     </div>
-    </div>
-    );
+  );
 };
-  
 
 export default ProfilePage;

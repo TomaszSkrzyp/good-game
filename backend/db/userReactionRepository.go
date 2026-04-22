@@ -19,7 +19,7 @@ func NewUserReactionRepository(db *gorm.DB) *UserReactionRepository {
 func (r *UserReactionRepository) UpdateOrCreate(ur *models.UserReaction) error {
 	return r.db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "user_id"}, {Name: "game_id"}},
-		DoUpdates: clause.AssignmentColumns([]string{"liked"}),
+		DoUpdates: clause.AssignmentColumns([]string{"rating"}),
 	}).Create(ur).Error
 }
 
@@ -46,9 +46,12 @@ func (r *UserReactionRepository) Delete(id uint) error {
 	return res.Error
 }
 
-func (r *UserReactionRepository) Filter(userID, gameID uint, liked *int, page, limit int) ([]models.UserReaction, error) {
+func (r *UserReactionRepository) Filter(userID, gameID uint, rating *int, page, limit int) ([]models.UserReaction, error) {
 	var list []models.UserReaction
-	query := r.db.Model(&models.UserReaction{}).Preload("User").Preload("Game")
+	query := r.db.Model(&models.UserReaction{}).
+		Preload("User").
+		Preload("Game.HomeTeam").
+		Preload("Game.AwayTeam")
 
 	if userID != 0 {
 		query = query.Where("user_id = ?", userID)
@@ -56,8 +59,8 @@ func (r *UserReactionRepository) Filter(userID, gameID uint, liked *int, page, l
 	if gameID != 0 {
 		query = query.Where("game_id = ?", gameID)
 	}
-	if liked != nil {
-		query = query.Where("liked = ?", *liked)
+	if rating != nil {
+		query = query.Where("rating = ?", *rating)
 	}
 	if page <= 0 {
 		page = 1
@@ -80,7 +83,7 @@ type ReactionStats struct {
 func (r *UserReactionRepository) GetStatsForGame(gameID uint) (float64, int64, error) {
 	var stats ReactionStats
 	err := r.db.Model(&models.UserReaction{}).
-		Select("COALESCE(AVG(liked), 0) as average, COUNT(*) as count").
+		Select("COALESCE(AVG(rating), 0) as average, COUNT(*) as count").
 		Where("game_id = ?", gameID).
 		Scan(&stats).Error
 
@@ -90,7 +93,7 @@ func (r *UserReactionRepository) GetStatsForGame(gameID uint) (float64, int64, e
 func (r *UserReactionRepository) GetStatsForTeam(teamID uint) (float64, int64, error) {
 	var stats ReactionStats
 	err := r.db.Table("user_reactions").
-		Select("COALESCE(AVG(liked), 0) as average, COUNT(user_reactions.id) as count").
+		Select("COALESCE(AVG(rating), 0) as average, COUNT(user_reactions.id) as count").
 		Joins("JOIN games ON games.id = user_reactions.game_id").
 		Where("games.home_team_id = ? OR games.away_team_id = ?", teamID, teamID).
 		Scan(&stats).Error

@@ -1,7 +1,7 @@
 import { Component, createResource, For, Show, createEffect } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 import { useParams, useNavigate } from "@solidjs/router";
-import { api } from "../../utils/api"; // Your Ky instance
+import { api } from "../../utils/api";
 import GameItem, { Game } from "./GameItem";
 import { useGameContext } from "./GameContext";
 import { todayStr } from "../../utils/dateUtils";

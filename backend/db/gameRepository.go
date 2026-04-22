@@ -24,9 +24,9 @@ func (r *GameRepository) GetByID(id uint, userID uint) (*models.Game, error) {
 
 	err := r.db.Model(&models.Game{}).
 		Select("games.*, "+
-			"COALESCE(AVG(all_reactions.liked), 0) as avg_rating, "+
+			"COALESCE(AVG(all_reactions.rating), 0) as avg_rating, "+
 			"COUNT(all_reactions.id) as rating_count, "+
-			"(SELECT liked FROM user_reactions WHERE game_id = games.id AND user_id = ?) as rating", userID). // FIXED HERE
+			"(SELECT rating FROM user_reactions WHERE game_id = games.id AND user_id = ?) as rating", userID). // FIXED HERE
 		Joins("LEFT JOIN user_reactions AS all_reactions ON all_reactions.game_id = games.id").
 		Group("games.id").
 		Preload("HomeTeam").
@@ -57,9 +57,9 @@ func (r *GameRepository) Filter(date string, homeID, awayID *uint, minRating, ma
 
 	query := r.db.Model(&models.Game{}).
 		Select("games.*, "+
-			"COALESCE(AVG(all_reactions.liked), 0) as avg_rating, "+
+			"COALESCE(AVG(all_reactions.rating), 0) as avg_rating, "+
 			"COUNT(all_reactions.id) as rating_count, "+
-			"(SELECT liked FROM user_reactions WHERE game_id = games.id AND user_id = ?) as rating", userID).
+			"(SELECT rating FROM user_reactions WHERE game_id = games.id AND user_id = ?) as rating", userID).
 		Joins("LEFT JOIN user_reactions AS all_reactions ON all_reactions.game_id = games.id").
 		Group("games.id").
 		Preload("HomeTeam").
@@ -75,10 +75,10 @@ func (r *GameRepository) Filter(date string, homeID, awayID *uint, minRating, ma
 	}
 
 	if minRating != nil {
-		query = query.Having("AVG(all_reactions.liked) >= ?", *minRating)
+		query = query.Having("AVG(all_reactions.rating) >= ?", *minRating)
 	}
 	if maxRating != nil {
-		query = query.Having("AVG(all_reactions.liked) <= ?", *maxRating)
+		query = query.Having("AVG(all_reactions.rating) <= ?", *maxRating)
 	}
 
 	if sort != "" {

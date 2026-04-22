@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -26,7 +25,7 @@ func CreateUserReaction(w http.ResponseWriter, r *http.Request, repo *db.UserRea
 
 	ur.UserID = userID
 
-	if ur.Liked < 1 || ur.Liked > 5 {
+	if ur.Rating < 1 || ur.Rating > 5 {
 		ErrorResponse(w, http.StatusBadRequest, "rating must be between 1 and 5")
 		return
 	}
@@ -44,7 +43,7 @@ func CreateUserReaction(w http.ResponseWriter, r *http.Request, repo *db.UserRea
 	}
 
 	JSONResponse(w, http.StatusOK, map[string]interface{}{
-		"rating":      ur.Liked,
+		"rating":      ur.Rating,
 		"avgRating":   avg,
 		"ratingCount": count,
 	})
@@ -167,7 +166,6 @@ func FilterUserReactions(w http.ResponseWriter, r *http.Request, repo *db.UserRe
 	} else {
 		targetUserID = ctxID
 	}
-	fmt.Println(targetUserID)
 	// security Check: If a user is trying to see a specific ID that isn't theirs, throw 403
 	if targetUserID == 0 {
 		ErrorResponse(w, http.StatusBadRequest, "no user identified")
@@ -180,10 +178,10 @@ func FilterUserReactions(w http.ResponseWriter, r *http.Request, repo *db.UserRe
 		}
 	}
 
-	var likedPtr *int
-	if v := q.Get("liked"); v != "" {
+	var ratingPtr *int
+	if v := q.Get("rating"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n >= 1 && n <= 10 {
-			likedPtr = &n
+			ratingPtr = &n
 		}
 	}
 
@@ -197,7 +195,7 @@ func FilterUserReactions(w http.ResponseWriter, r *http.Request, repo *db.UserRe
 		limit = 50
 	}
 
-	list, err := repo.Filter(targetUserID, gameID, likedPtr, page, limit)
+	list, err := repo.Filter(targetUserID, gameID, ratingPtr, page, limit)
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "failed to fetch reactions")
 		return

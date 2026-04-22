@@ -8,6 +8,6 @@ type UserReaction struct {
 	Game      Game      `gorm:"foreignKey:GameID" json:"game,omitempty"`
 	UserID    uint      `gorm:"uniqueIndex:idx_user_game" json:"userId"`
 	User      User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	Liked     int       `gorm:"column:liked" json:"rating"`
+	Rating    int       `gorm:"column:rating" json:"rating"`
 	CreatedAt time.Time `json:"createdAt"`
 }

@@ -1,5 +1,5 @@
 import { Component, createSignal, Show, For } from "solid-js";
-import { auth } from "../../data/store";
+import { auth } from "../../data/auth";
 import { api } from "../../utils/api";
 
 interface Team {
@@ -21,7 +21,7 @@ export interface GameQuality {
   isBigScoring: boolean; isBigGame: boolean;
   isClutch: boolean; isStarDuel: boolean;
   isHugeSwing: boolean; isShootout: boolean;
-  isGritty: boolean;
+  isGritty: boolean;isOvertime: boolean;
 }
 
 export interface Game {
@@ -106,7 +106,6 @@ const GameItem: Component<GameItemProps> = (props) => {
         </div>
       </Show>
 
-      {/* Stats Modal */}
       <Show when={showStats()}>
         <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={closeStats}>
           <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto relative" onClick={(e) => e.stopPropagation()}>
@@ -170,6 +169,7 @@ const GameItem: Component<GameItemProps> = (props) => {
             <Show when={q().isClutch}><Badge class="bg-red-50 text-red-600" title="4th quarter was close or game decided by 3 points or less">Clutch</Badge></Show>
             <Show when={q().isBigGame}><Badge class="bg-yellow-50 text-yellow-700" title="High impact player performance">Big Game</Badge></Show>
             <Show when={q().isBigScoring}><Badge class="bg-purple-50 text-purple-600" title="A player scored 35+ points">Scoring</Badge></Show>
+            <Show when={q().isOvertime}><Badge class="bg-emerald-50 text-emerald-700 border-emerald-100" title="Extra periods played">Overtime</Badge></Show>
             <Show when={q().isStarDuel}><Badge class="bg-blue-50 text-blue-600" title="Star players on both teams performed">Star Duel</Badge></Show>
             <Show when={q().isHugeSwing}><Badge class="bg-green-50 text-green-600" title="Big lead closed in 4th quarter">Huge Swing</Badge></Show>
             <Show when={q().isShootout}><Badge class="bg-pink-50 text-pink-600" title="High total points shootout">Shootout</Badge></Show>
@@ -207,20 +207,23 @@ const GameItem: Component<GameItemProps> = (props) => {
   );
 };
 
-// Fixed Badge Component
 const Badge = (p: { children: any, class: string, title?: string }) => (
-  <span title={p.title} class={`text-[9px] font-bold px-2 py-0.5 rounded border border-current cursor-help ${p.class}`}>
+  <span 
+    title={p.title} 
+    class={`text-[9px] font-bold px-2 py-0.5 rounded uppercase border transition-all cursor-help ${p.class}`}
+  >
     {p.children}
   </span>
 );
-
 const TeamRow = (p: { team: Team, score: number, hide: boolean }) => (
-  <div class="flex justify-between items-center">
+  <div class="flex justify-between items-center group/team">
     <div class="flex items-center gap-2">
-      <span class="text-xs font-black text-gray-400 w-8">{p.team.abbreviation}</span>
-      <span class="font-bold text-gray-800">{p.team.teamName}</span>
+      <span class="text-[10px] font-black text-gray-400 w-8 group-hover/team:text-blue-500 transition-colors">{p.team.abbreviation}</span>
+      <span class={`text-sm font-bold ${p.hide ? 'text-gray-400' : 'text-gray-700'}`}>{p.team.teamName}</span>
     </div>
-    <span class="font-mono text-xl font-black text-gray-800">{p.hide ? '—' : p.score}</span>
+    <span class={`font-mono text-xl font-black transition-all ${p.hide ? 'text-gray-200 blur-[2px]' : 'text-gray-800'}`}>
+      {p.hide ? '000' : p.score}
+    </span>
   </div>
 );
 

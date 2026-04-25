@@ -37,4 +37,37 @@ type GameQuality struct {
 	IsHugeSwing  bool `gorm:"column:is_huge_swing;default:false" json:"isHugeSwing"`
 	IsShootout   bool `gorm:"column:is_shootout;default:false" json:"isShootout"`
 	IsGritty     bool `gorm:"column:is_gritty;default:false" json:"isGritty"`
+	IsOvertime   bool `gorm:"column:is_overtime;default:false" json:"isOvertime"`
+}
+type GameQualityConfig struct {
+	Margins             []MarginWeight `json:"margins"`
+	HugeSwingBonus      int            `json:"hugeSwingBonus"`
+	ClutchBonus         int            `json:"clutchBonus"`
+	OvertimeBonus       int            `json:"overtimeBonus"`
+	ShootoutBonus       int            `json:"shootoutBonus"`
+	ShootoutThreshold   int            `json:"shootoutThreshold"`
+	GrittyThreshold     int            `json:"grittyThreshold"`
+	StarDuelBonus       int            `json:"starDuelBonus"`
+	StarPointsThreshold int            `json:"starPointsThreshold"`
+	BigGameBonus        int            `json:"bigGameBonus"`
+}
+
+type MarginWeight struct {
+	MaxMargin int `json:"maxMargin"`
+	Points    int `json:"points"`
+}
+
+// Global variable or a function to get current config
+var CurrentConfig = GameQualityConfig{
+	Margins: []MarginWeight{
+		{MaxMargin: 3, Points: 45},
+		{MaxMargin: 7, Points: 30},
+		{MaxMargin: 12, Points: 15},
+	},
+	HugeSwingBonus:    25,
+	ClutchBonus:       20,
+	OvertimeBonus:     15,
+	ShootoutBonus:     15,
+	ShootoutThreshold: 235,
+	GrittyThreshold:   190,
 }

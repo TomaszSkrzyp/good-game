@@ -288,7 +288,7 @@ func saveESPNGame(gormDB *gorm.DB, event ESPNEvent) {
 		hQs[i] = getQScore(home.LineScores, i)
 		aQs[i] = getQScore(away.LineScores, i)
 	}
-	gameQuality := calculateFinalQuality(hScore, aScore, hQs, aQs, home.Leaders, away.Leaders)
+	gameQuality := CalculateFinalQuality(hScore, aScore, hQs, aQs, home.Leaders, away.Leaders)
 
 	// Transactional Upsert for Finalized Games
 	err = gormDB.Where(models.Game{

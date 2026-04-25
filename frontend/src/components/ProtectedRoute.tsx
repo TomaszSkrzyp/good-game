@@ -1,6 +1,6 @@
 import { Component, JSX, onMount } from "solid-js";
 import { useNavigate } from "@solidjs/router";
-import { auth } from "../data/store";
+import { auth } from "../data/auth";
 
 interface Props {
   children: JSX.Element;

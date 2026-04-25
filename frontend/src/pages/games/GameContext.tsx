@@ -1,5 +1,5 @@
 import { createContext, useContext, createSignal, createEffect, ParentComponent } from "solid-js";
-import { auth } from "../../data/store";
+import { auth } from "../../data/auth";
 import { api } from "../../utils/api";
 
 interface GameContextType {

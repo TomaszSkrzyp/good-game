@@ -1,5 +1,5 @@
 import { Component, createResource, Show, createEffect, For } from "solid-js";
-import { auth, logout } from "../../data/store";
+import { auth, logout } from "../../data/auth";
 import { api } from "../../utils/api";
 import { useNavigate } from "@solidjs/router";
 import ReactionItem from "./ReactionItem";

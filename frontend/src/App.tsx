@@ -7,31 +7,24 @@ import GamesPage from "./pages/games/GamesPage";
 import Layout from "./components/Layout";
 import { todayStr } from "./utils/dateUtils";
 import { Navigate } from "@solidjs/router";
+import HowItWorks from "./pages/algorithm/HowItWorks";
 
 const App = () => {
   return (
     <Router>
-      <Route path="/" component={() => <Layout><LoginPage /></Layout>} />
-      <Route path="/register" component={() => <Layout><RegisterPage /></Layout>} />
-      <Route
-        path="/profile"
-        component={() => (
-          <Layout>
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          </Layout>
-        )}
-      />
-      <Route
-    path="/games/:date"
-    component={() => (
-      <Layout>
-        <GamesPage />
-      </Layout>
-    )}
-  />
-      <Route path="/games" component={() => <Navigate href={`/games/${todayStr()}`} />} /> 
+      <Route component={Layout}> 
+        <Route path="/" component={LoginPage} />
+        <Route path="/register" component={RegisterPage} />
+        <Route path="/how-it-works" component={HowItWorks} />
+        <Route path="/profile" component={() => (
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        )} />
+        
+        <Route path="/games/:date" component={GamesPage} />
+        <Route path="/games" component={() => <Navigate href={`/games/${todayStr()}`} />} />
+      </Route>
     </Router>
   );
 };

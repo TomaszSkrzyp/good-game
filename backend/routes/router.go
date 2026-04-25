@@ -17,6 +17,7 @@ func NewRouter(db *gorm.DB) http.Handler {
 	RegisterConferenceRoutes(mux, db)
 	RegisterTeamStatsRoutes(mux, db)
 	RegisterUserReactionRoutes(mux, db)
+	RegisterConfigRoutes(mux)
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		handlers.JSONResponse(w, http.StatusOK, map[string]string{"status": "ok"})

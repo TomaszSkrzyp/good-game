@@ -112,10 +112,15 @@ func OptionalAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		if strings.HasPrefix(authHeader, "Bearer ") {
 			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 			if claims, err := ValidateToken(tokenString); err == nil {
+				ctx := r.Context()
 				if userID, ok := claims["id"].(float64); ok {
-					ctx := context.WithValue(r.Context(), UserIDKey, uint(userID))
-					r = r.WithContext(ctx)
+					ctx = context.WithValue(r.Context(), UserIDKey, uint(userID))
+
 				}
+				if role, ok := claims["role"].(string); ok {
+					ctx = context.WithValue(ctx, UserRoleKey, role)
+				}
+				r = r.WithContext(ctx)
 			}
 		}
 		next(w, r)
@@ -127,7 +132,7 @@ func Recovery(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				log.Printf("panic: %v\n%s\n", err, debug.Stack()) // Now prints the exact file and line!
+				log.Printf("panic: %v\n%s\n", err, debug.Stack())
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{
@@ -160,9 +165,10 @@ func EnableCORS(next http.Handler) http.Handler {
 }
 
 func AdminOnly(next http.HandlerFunc) http.HandlerFunc {
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		role, ok := r.Context().Value(UserRoleKey).(string)
-		if !ok || role != "admin" {
+		if !ok || role != "Admin" {
 			http.Error(w, "forbidden: admins only", http.StatusForbidden)
 			return
 		}

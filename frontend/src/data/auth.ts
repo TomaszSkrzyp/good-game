@@ -6,7 +6,7 @@ interface AuthState {
   token: string;
   userName: string;
   email: string;
-  role: string; // added role here for your admin check
+  role: string;
   isLoggedIn: boolean;
 }
 

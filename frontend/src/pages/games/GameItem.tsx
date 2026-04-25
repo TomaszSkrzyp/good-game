@@ -57,7 +57,7 @@ const GameItem: Component<GameItemProps> = (props) => {
   const q = () => props.game.gameQuality;
 
   const isCurrentlyHidden = () => {
-    if (props.game.status !== "STATUS_FINAL") return true;
+    if (props.game.status !== "STATUS_FINAL") return false;
     return (props.hideScores ?? false) !== localToggle();
   };
 

@@ -8,26 +8,13 @@ import (
 )
 
 func RegisterConfigRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /config", handlers.GetAlgorithmConfig)
 
-	mux.HandleFunc("/config", middleware.OptionalAuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			handlers.GetAlgorithmConfig(w, r)
-
-		case http.MethodPost:
-			// restricted: check if user is logged in AND is an admin
-			val := r.Context().Value(middleware.UserIDKey)
-			userRole := r.Context().Value(middleware.UserRoleKey)
-
-			if val == nil || userRole != "admin" {
-				handlers.ErrorResponse(w, http.StatusForbidden, "Only administrators can tune the algorithm")
-				return
-			}
-
-			handlers.UpdateConfig(w, r)
-
-		default:
-			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed")
-		}
-	}))
+	mux.HandleFunc("POST /config",
+		middleware.AuthMiddleware(
+			middleware.AdminOnly(
+				handlers.UpdateConfig,
+			),
+		),
+	)
 }

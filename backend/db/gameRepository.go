@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"errors"
 
 	"github.com/tomaszSkrzyp/good-game/models"
@@ -15,14 +16,14 @@ func NewGameRepository(db *gorm.DB) *GameRepository {
 	return &GameRepository{db: db}
 }
 
-func (r *GameRepository) Create(game *models.Game) error {
-	return r.db.Create(game).Error
+func (r *GameRepository) Create(ctx context.Context, game *models.Game) error {
+	return r.db.WithContext(ctx).Create(game).Error
 }
 
-func (r *GameRepository) GetByID(id uint, userID uint) (*models.Game, error) {
+func (r *GameRepository) GetByID(ctx context.Context, id uint, userID uint) (*models.Game, error) {
 	var game models.Game
 
-	err := r.db.Model(&models.Game{}).
+	err := r.db.WithContext(ctx).Model(&models.Game{}).
 		Select("games.*, "+
 			"COALESCE(AVG(all_reactions.rating), 0) as avg_rating, "+
 			"COUNT(all_reactions.id) as rating_count, "+
@@ -34,28 +35,31 @@ func (r *GameRepository) GetByID(id uint, userID uint) (*models.Game, error) {
 		First(&game, id).Error
 
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &game, nil
 }
 
-func (r *GameRepository) Update(game *models.Game) error {
-	return r.db.Save(game).Error
+func (r *GameRepository) Update(ctx context.Context, game *models.Game) error {
+	return r.db.WithContext(ctx).Save(game).Error
 }
 
-func (r *GameRepository) Delete(id uint) error {
-	res := r.db.Delete(&models.Game{}, id)
+func (r *GameRepository) Delete(ctx context.Context, id uint) error {
+	res := r.db.WithContext(ctx).Delete(&models.Game{}, id)
 	if res.RowsAffected == 0 {
 		return errors.New("game not found")
 	}
 	return res.Error
 }
 
-func (r *GameRepository) Filter(date string, homeID, awayID *uint, minRating, maxRating *int, sort string, page, limit int, userID uint) ([]models.Game, error) {
+func (r *GameRepository) Filter(ctx context.Context, date string, homeID, awayID *uint, minRating, maxRating *int, sort string, page, limit int, userID uint) ([]models.Game, error) {
 	var games []models.Game
 	offset := (page - 1) * limit
 
-	query := r.db.Model(&models.Game{}).
+	query := r.db.WithContext(ctx).Model(&models.Game{}).
 		Select("games.*, "+
 			"COALESCE(AVG(all_reactions.rating), 0) as avg_rating, "+
 			"COUNT(all_reactions.id) as rating_count, "+

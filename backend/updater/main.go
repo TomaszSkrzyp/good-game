@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -23,8 +24,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("error: couldn't connect to pg: %v", err)
 	}
-
-	db.Initialize(gormDB)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := db.Initialize(ctx, gormDB); err != nil {
+		log.Fatalf("Critical error during database initialization: %v", err)
+	}
 	log.Println("db connection ok")
 
 	// run every 15 mins

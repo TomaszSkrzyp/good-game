@@ -19,7 +19,7 @@ func CreateGame(w http.ResponseWriter, r *http.Request, repo *db.GameRepository)
 		return
 	}
 
-	if err := repo.Create(&game); err != nil {
+	if err := repo.Create(r.Context(), &game); err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "could not create game")
 		return
 	}
@@ -41,7 +41,7 @@ func GetGameByID(w http.ResponseWriter, r *http.Request, repo *db.GameRepository
 		}
 	}
 
-	game, err := repo.GetByID(uint(parsed), userID)
+	game, err := repo.GetByID(r.Context(), uint(parsed), userID)
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "could not retrieve game")
 		return
@@ -69,7 +69,7 @@ func UpdateGame(w http.ResponseWriter, r *http.Request, repo *db.GameRepository)
 	}
 
 	game.ID = uint(parsed)
-	if err := repo.Update(&game); err != nil {
+	if err := repo.Update(r.Context(), &game); err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "could not update game")
 		return
 	}
@@ -124,7 +124,7 @@ func FilterGames(w http.ResponseWriter, r *http.Request, repo *db.GameRepository
 		limit = 20
 	}
 
-	games, err := repo.Filter(date, homeID, awayID, minRating, maxRating, sort, page, limit, userID)
+	games, err := repo.Filter(r.Context(), date, homeID, awayID, minRating, maxRating, sort, page, limit, userID)
 
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "could not retrieve games")
@@ -142,7 +142,7 @@ func DeleteGame(w http.ResponseWriter, r *http.Request, repo *db.GameRepository)
 		return
 	}
 
-	if err := repo.Delete(uint(parsed)); err != nil {
+	if err := repo.Delete(r.Context(), uint(parsed)); err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "could not delete game")
 		return
 	}
@@ -170,7 +170,7 @@ func GetGameStats(w http.ResponseWriter, r *http.Request, repo *db.GameRepositor
 		}
 	}
 
-	game, err := repo.GetByID(uint(gameIDParsed), userID)
+	game, err := repo.GetByID(r.Context(), uint(gameIDParsed), userID)
 	if err != nil || game == nil {
 		ErrorResponse(w, http.StatusNotFound, "Game not found")
 		return

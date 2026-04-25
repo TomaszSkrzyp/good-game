@@ -1,13 +1,15 @@
 package db
 
 import (
+	"context"
+	"fmt"
 	"log"
 
 	"github.com/tomaszSkrzyp/good-game/models"
 	"gorm.io/gorm"
 )
 
-func Initialize(db *gorm.DB) {
+func Initialize(ctx context.Context, db *gorm.DB) error {
 	err := db.AutoMigrate(
 		&models.User{},
 		&models.Role{},
@@ -18,17 +20,20 @@ func Initialize(db *gorm.DB) {
 		&models.UserReaction{},
 	)
 	if err != nil {
-		log.Fatal("Migration failed:", err)
+		return fmt.Errorf("migration failed: %w", err)
 	}
 
-	SeedRoles(db)
-	SeedAdminUser(db)
-	SeedTeams(db)
-	if err := BuildConferenceMap(db); err != nil {
+	SeedRoles(ctx, db)
+	SeedAdminUser(ctx, db)
+	SeedTeams(ctx, db)
+
+	if err := BuildConferenceMap(ctx, db); err != nil {
 		log.Printf("Warning: BuildConferenceMap failed: %v", err)
 	}
 
-	if err := BuildTeamMap(db); err != nil {
+	if err := BuildTeamMap(ctx, db); err != nil {
 		log.Printf("Warning: BuildTeamMap failed: %v", err)
 	}
+
+	return nil
 }

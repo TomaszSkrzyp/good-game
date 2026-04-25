@@ -1,11 +1,13 @@
 package db
 
 import (
+	"context"
+
 	"github.com/tomaszSkrzyp/good-game/models"
 	"gorm.io/gorm"
 )
 
-func BuildConferenceMap(db *gorm.DB) error {
+func BuildConferenceMap(ctx context.Context, db *gorm.DB) error {
 	r := NewConferenceRepository(db)
 	m, err := r.NameToIDMap()
 	if err != nil {
@@ -17,9 +19,9 @@ func BuildConferenceMap(db *gorm.DB) error {
 
 var TeamAbbrToIDMap = make(map[string]uint)
 
-func BuildTeamMap(db *gorm.DB) error {
+func BuildTeamMap(ctx context.Context, db *gorm.DB) error {
 	var teams []models.Team
-	if err := db.Find(&teams).Error; err != nil {
+	if err := db.WithContext(ctx).Find(&teams).Error; err != nil {
 		return err
 	}
 
@@ -29,7 +31,7 @@ func BuildTeamMap(db *gorm.DB) error {
 	return nil
 }
 
-func SeedTeams(db *gorm.DB) {
+func SeedTeams(ctx context.Context, db *gorm.DB) {
 	data := map[string][]struct{ Name, Abbr string }{
 		"Eastern Conference": {
 			{"Atlanta Hawks", "ATL"}, {"Boston Celtics", "BOS"}, {"Brooklyn Nets", "BKN"},
@@ -53,7 +55,7 @@ func SeedTeams(db *gorm.DB) {
 		db.FirstOrCreate(&conf, models.Conference{Name: confName})
 
 		for _, t := range teams {
-			db.Where(models.Team{Name: t.Name}).FirstOrCreate(&models.Team{
+			db.WithContext(ctx).Where(models.Team{Name: t.Name}).FirstOrCreate(&models.Team{
 				Name:         t.Name,
 				Abbreviation: t.Abbr,
 				ConferenceID: conf.ID,

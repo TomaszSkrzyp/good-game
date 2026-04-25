@@ -20,7 +20,7 @@ func GetConferenceByID(w http.ResponseWriter, r *http.Request, repo *db.Conferen
 		return
 	}
 
-	conference, err := repo.GetByID(uint(id))
+	conference, err := repo.GetByID(r.Context(), uint(id))
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -35,7 +35,7 @@ func GetConferenceByID(w http.ResponseWriter, r *http.Request, repo *db.Conferen
 }
 
 func ListConferences(w http.ResponseWriter, r *http.Request, repo *db.ConferenceRepository) {
-	conferences, err := repo.List()
+	conferences, err := repo.List(r.Context())
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return

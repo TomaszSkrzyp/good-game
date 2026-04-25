@@ -34,7 +34,7 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request, us *services.Us
 		return
 	}
 
-	newUser, err := us.Register(req.UserName, req.Password, req.Email, 2)
+	newUser, err := us.Register(r.Context(), req.UserName, req.Password, req.Email, 2)
 	if err != nil {
 		ErrorResponse(w, http.StatusConflict, err.Error())
 		return
@@ -50,7 +50,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, us *services.UserServi
 		return
 	}
 
-	user, err := us.Authenticate(req.UserName, req.Password)
+	user, err := us.Authenticate(r.Context(), req.UserName, req.Password)
 	if err != nil {
 		ErrorResponse(w, http.StatusUnauthorized, "Invalid credentials")
 		return
@@ -100,7 +100,7 @@ func RefreshHandler(w http.ResponseWriter, r *http.Request, us *services.UserSer
 	}
 
 	userID := uint(claims["id"].(float64))
-	user, err := us.GetUserByID(userID)
+	user, err := us.GetUserByID(r.Context(), userID)
 	if err != nil {
 		ErrorResponse(w, http.StatusUnauthorized, "User session no longer valid")
 		return
@@ -117,7 +117,7 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, us *services.User
 		return
 	}
 
-	user, err := us.GetUserByID(userID)
+	user, err := us.GetUserByID(r.Context(), userID)
 	if err != nil {
 		ErrorResponse(w, http.StatusNotFound, "User record not found")
 		return
@@ -137,7 +137,7 @@ func GetUserSettingsHandler(w http.ResponseWriter, r *http.Request, us *services
 		return
 	}
 
-	user, err := us.GetUserByID(userID)
+	user, err := us.GetUserByID(r.Context(), userID)
 	if err != nil {
 		ErrorResponse(w, http.StatusNotFound, "User not found")
 		return
@@ -161,7 +161,7 @@ func UpdateUserSettingsHandler(w http.ResponseWriter, r *http.Request, us *servi
 		return
 	}
 
-	if err := us.SetHideScores(userID, body.HideScores); err != nil {
+	if err := us.SetHideScores(r.Context(), userID, body.HideScores); err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "Failed to update settings")
 		return
 	}

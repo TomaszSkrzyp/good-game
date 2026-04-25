@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"errors"
 
 	"github.com/tomaszSkrzyp/good-game/models"
@@ -16,39 +17,42 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-func (r *UserRepository) Create(user *models.User) error {
-	return r.db.Create(user).Error
+func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
+	return r.db.WithContext(ctx).Create(user).Error
 }
 
-func (r *UserRepository) GetByID(id uint) (*models.User, error) {
+func (r *UserRepository) GetByID(ctx context.Context, id uint) (*models.User, error) {
 	var user models.User
-	if err := r.db.Preload("Role").First(&user, id).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("Role").First(&user, id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &user, nil
 }
 
-func (r *UserRepository) GetByUserName(username string) (*models.User, error) {
+func (r *UserRepository) GetByUserName(ctx context.Context, username string) (*models.User, error) {
 	var user models.User
-	if err := r.db.Preload("Role").Where("user_name = ?", username).First(&user).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("Role").Where("user_name = ?", username).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
 }
-func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	var user models.User
-	if err := r.db.Preload("Role").Where("email = ?", email).First(&user).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("Role").Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
 }
 
-func (r *UserRepository) Update(user *models.User) error {
-	return r.db.Save(user).Error
+func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
+	return r.db.WithContext(ctx).Save(user).Error
 }
 
-func (r *UserRepository) Delete(id uint) error {
-	res := r.db.Delete(&models.User{}, id)
+func (r *UserRepository) Delete(ctx context.Context, id uint) error {
+	res := r.db.WithContext(ctx).Delete(&models.User{}, id)
 	if res.RowsAffected == 0 {
 		return errors.New("user not found")
 	}

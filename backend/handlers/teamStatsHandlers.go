@@ -16,7 +16,7 @@ func CreateTeamStats(w http.ResponseWriter, r *http.Request, repo *db.TeamStatsR
 		return
 	}
 
-	if err := repo.Create(&teamStats); err != nil {
+	if err := repo.Create(r.Context(), &teamStats); err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "failed to create team stats")
 		return
 	}
@@ -37,7 +37,7 @@ func GetTeamStatsByID(w http.ResponseWriter, r *http.Request, repo *db.TeamStats
 		return
 	}
 
-	teamStats, err := repo.GetByID(uint(parsed))
+	teamStats, err := repo.GetByID(r.Context(), uint(parsed))
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "could not retrieve team stats")
 		return
@@ -72,7 +72,7 @@ func UpdateTeamStats(w http.ResponseWriter, r *http.Request, repo *db.TeamStatsR
 
 	teamStats.ID = uint(parsed)
 
-	if err := repo.Update(&teamStats); err != nil {
+	if err := repo.Update(r.Context(), &teamStats); err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "failed to update team stats")
 		return
 	}
@@ -93,7 +93,7 @@ func DeleteTeamStats(w http.ResponseWriter, r *http.Request, repo *db.TeamStatsR
 		return
 	}
 
-	if err := repo.Delete(uint(parsed)); err != nil {
+	if err := repo.Delete(r.Context(), uint(parsed)); err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "failed to delete team stats")
 		return
 	}
@@ -116,7 +116,7 @@ func FilterTeamStats(w http.ResponseWriter, r *http.Request, repo *db.TeamStatsR
 		return
 	}
 
-	teamStats, err := repo.Filter(uint(parsed), season)
+	teamStats, err := repo.Filter(r.Context(), uint(parsed), season)
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "could not filter team stats")
 		return

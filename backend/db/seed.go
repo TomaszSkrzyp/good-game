@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"log"
 	"os"
 
@@ -9,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func SeedRoles(db *gorm.DB) {
+func SeedRoles(ctx context.Context, db *gorm.DB) {
 	roles := []models.Role{
 		{Name: "Admin"},
 		{Name: "User"},
@@ -29,7 +30,7 @@ func SeedRoles(db *gorm.DB) {
 	}
 }
 
-func SeedAdminUser(db *gorm.DB) {
+func SeedAdminUser(ctx context.Context, db *gorm.DB) {
 	adminUser := os.Getenv("ADMIN_USERNAME")
 	adminPass := os.Getenv("ADMIN_PASSWORD")
 
@@ -39,7 +40,7 @@ func SeedAdminUser(db *gorm.DB) {
 	}
 
 	var admin models.User
-	if err := db.Where("user_name = ?", adminUser).First(&admin).Error; err == gorm.ErrRecordNotFound {
+	if err := db.WithContext(ctx).Where("user_name = ?", adminUser).First(&admin).Error; err == gorm.ErrRecordNotFound {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(adminPass), bcrypt.DefaultCost)
 		if err != nil {
 			log.Fatalf("Failed to hash admin password: %v", err)

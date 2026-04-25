@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/tomaszSkrzyp/good-game/db"
 	"github.com/tomaszSkrzyp/good-game/fetch"
@@ -32,8 +34,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-	db.Initialize(gormDB)
+	if err := db.Initialize(ctx, gormDB); err != nil {
+		log.Fatalf("Critical error during database initialization: %v", err)
+	}
 
 	if *updateAll {
 		season := 2026

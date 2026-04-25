@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -25,13 +26,13 @@ func NewUserService(repo *db.UserRepository) *UserService {
 	return &UserService{repo: repo}
 }
 
-func (s *UserService) Register(username, password, email string, roleID uint) (*models.User, error) {
-	exists, _ := s.repo.GetByUserName(username)
+func (s *UserService) Register(ctx context.Context, username, password, email string, roleID uint) (*models.User, error) {
+	exists, _ := s.repo.GetByUserName(ctx, username)
 	if exists != nil {
 		return nil, ErrUserExists
 	}
 
-	exists, _ = s.repo.GetByEmail(email)
+	exists, _ = s.repo.GetByEmail(ctx, email)
 	if exists != nil {
 		return nil, ErrEmailExists
 	}
@@ -48,15 +49,15 @@ func (s *UserService) Register(username, password, email string, roleID uint) (*
 		RoleID:   roleID,
 	}
 
-	if err := s.repo.Create(newUser); err != nil {
+	if err := s.repo.Create(ctx, newUser); err != nil {
 		return nil, err
 	}
 
 	return newUser, nil
 }
 
-func (s *UserService) Authenticate(username, password string) (*models.User, error) {
-	user, err := s.repo.GetByUserName(username)
+func (s *UserService) Authenticate(ctx context.Context, username, password string) (*models.User, error) {
+	user, err := s.repo.GetByUserName(ctx, username)
 	if err != nil || user == nil {
 		return nil, ErrInvalidAuth
 	}
@@ -66,26 +67,26 @@ func (s *UserService) Authenticate(username, password string) (*models.User, err
 	}
 
 	user.LastLoginAt = time.Now()
-	_ = s.repo.Update(user)
+	_ = s.repo.Update(ctx, user)
 
 	user.Password = ""
 	return user, nil
 }
 
-func (s *UserService) GetUserByID(userID uint) (*models.User, error) {
-	user, err := s.repo.GetByID(userID)
+func (s *UserService) GetUserByID(ctx context.Context, userID uint) (*models.User, error) {
+	user, err := s.repo.GetByID(ctx, userID)
 	if err != nil || user == nil {
 		return nil, ErrUserNotFound
 	}
 	return user, nil
 }
 
-func (s *UserService) SetHideScores(userID uint, hideScores bool) error {
-	user, err := s.repo.GetByID(userID)
+func (s *UserService) SetHideScores(ctx context.Context, userID uint, hideScores bool) error {
+	user, err := s.repo.GetByID(ctx, userID)
 	if err != nil || user == nil {
 		return ErrUserNotFound
 	}
 
 	user.HideScores = hideScores
-	return s.repo.Update(user)
+	return s.repo.Update(ctx, user)
 }

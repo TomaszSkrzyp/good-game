@@ -20,7 +20,7 @@ func GetTeamByID(w http.ResponseWriter, r *http.Request, repo *db.TeamRepository
 		return
 	}
 
-	team, err := repo.GetByID(uint(id))
+	team, err := repo.GetByID(r.Context(), uint(id))
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -46,7 +46,7 @@ func FilterTeams(w http.ResponseWriter, r *http.Request, repo *db.TeamRepository
 		}
 	}
 
-	teams, err := repo.Filter(name, conferenceName, conferenceID)
+	teams, err := repo.Filter(r.Context(), name, conferenceName, conferenceID)
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return

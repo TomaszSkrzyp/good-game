@@ -26,11 +26,6 @@ const GamesPage: Component = () => {
       setGamesStore("list", reconcile(data));
     }
   });
-
-  createEffect(() => {
-    if (!params.date) navigate(`/games/${todayStr()}`, { replace: true });
-  });
-
   const shiftDay = (delta: number) => {
     const d = new Date(day() + 'T12:00:00');
     d.setDate(d.getDate() + delta);

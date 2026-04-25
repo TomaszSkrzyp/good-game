@@ -30,13 +30,13 @@ func CreateUserReaction(w http.ResponseWriter, r *http.Request, repo *db.UserRea
 		return
 	}
 
-	if err := repo.UpdateOrCreate(&ur); err != nil {
+	if err := repo.UpdateOrCreate(r.Context(), &ur); err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "failed to create reaction")
 		return
 	}
 
 	//fetch updated stats and return
-	avg, count, err := repo.GetStatsForGame(ur.GameID)
+	avg, count, err := repo.GetStatsForGame(r.Context(), ur.GameID)
 	if err != nil {
 		JSONResponse(w, http.StatusOK, ur)
 		return
@@ -62,7 +62,7 @@ func GetUserReactionByID(w http.ResponseWriter, r *http.Request, repo *db.UserRe
 		return
 	}
 
-	ur, err := repo.GetByID(uint(parsed))
+	ur, err := repo.GetByID(r.Context(), uint(parsed))
 	if err != nil || ur == nil {
 		ErrorResponse(w, http.StatusNotFound, "reaction not found")
 		return
@@ -96,7 +96,7 @@ func UpdateUserReaction(w http.ResponseWriter, r *http.Request, repo *db.UserRea
 		return
 	}
 
-	existing, err := repo.GetByID(uint(parsed))
+	existing, err := repo.GetByID(r.Context(), uint(parsed))
 	if err != nil || existing == nil || existing.UserID != userID {
 		ErrorResponse(w, http.StatusForbidden, "forbidden")
 		return
@@ -111,7 +111,7 @@ func UpdateUserReaction(w http.ResponseWriter, r *http.Request, repo *db.UserRea
 	ur.ID = uint(parsed)
 	ur.UserID = userID
 
-	if err := repo.Update(&ur); err != nil {
+	if err := repo.Update(r.Context(), &ur); err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "failed to update reaction")
 		return
 	}
@@ -138,13 +138,13 @@ func DeleteUserReaction(w http.ResponseWriter, r *http.Request, repo *db.UserRea
 		return
 	}
 
-	existing, err := repo.GetByID(uint(parsed))
+	existing, err := repo.GetByID(r.Context(), uint(parsed))
 	if err != nil || existing == nil || existing.UserID != userID {
 		ErrorResponse(w, http.StatusForbidden, "forbidden")
 		return
 	}
 
-	if err := repo.Delete(uint(parsed)); err != nil {
+	if err := repo.Delete(r.Context(), uint(parsed)); err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "failed to delete reaction")
 		return
 	}
@@ -195,7 +195,7 @@ func FilterUserReactions(w http.ResponseWriter, r *http.Request, repo *db.UserRe
 		limit = 50
 	}
 
-	list, err := repo.Filter(targetUserID, gameID, ratingPtr, page, limit)
+	list, err := repo.Filter(r.Context(), targetUserID, gameID, ratingPtr, page, limit)
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "failed to fetch reactions")
 		return
@@ -217,7 +217,7 @@ func GetAverageReactionForGame(w http.ResponseWriter, r *http.Request, repo *db.
 		return
 	}
 
-	avg, count, err := repo.GetStatsForGame(uint(parsed))
+	avg, count, err := repo.GetStatsForGame(r.Context(), uint(parsed))
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "failed to fetch stats")
 		return
@@ -243,7 +243,7 @@ func GetAverageReactionForTeam(w http.ResponseWriter, r *http.Request, repo *db.
 		return
 	}
 
-	avg, count, err := repo.GetStatsForTeam(uint(parsed))
+	avg, count, err := repo.GetStatsForTeam(r.Context(), uint(parsed))
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "failed to fetch stats")
 		return

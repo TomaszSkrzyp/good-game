@@ -21,7 +21,9 @@ func RegisterAuthRoutes(mux *http.ServeMux, gormDB *gorm.DB) {
 		}
 		handlers.LoginHandler(w, r, svc)
 	})
-
+	mux.HandleFunc("POST /logout", func(w http.ResponseWriter, r *http.Request) {
+		handlers.LogoutHandler(w, r)
+	})
 	mux.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed")

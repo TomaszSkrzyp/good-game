@@ -1,7 +1,7 @@
 import { Component, Show } from "solid-js";
 import { A } from "@solidjs/router";
 import LogoutButton from "../pages/auth/Logout";
-import { auth } from "../data/store";
+import { auth } from "../data/auth";
 
 const Header: Component = () => {
   return (
@@ -9,7 +9,9 @@ const Header: Component = () => {
       <A href="/games" class="text-xl font-extrabold tracking-tight hover:text-blue-400 transition-colors">
         Good Game
       </A>
-      
+      <A href="/how-it-works" class="text-sm font-medium hover:text-blue-500">
+        Algorithm
+      </A>
       <div class="flex items-center gap-4">
         <Show 
           when={auth.isLoggedIn} 

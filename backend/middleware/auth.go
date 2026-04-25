@@ -17,6 +17,7 @@ import (
 type contextKey string
 
 const UserIDKey contextKey = "userID"
+const UserRoleKey contextKey = "userRole"
 
 var JwtKey []byte
 
@@ -30,10 +31,11 @@ func init() {
 }
 
 // create jwt with exp
-func GenerateToken(userID uint, username string, duration time.Duration) (string, error) {
+func GenerateToken(userID uint, username string, role string, duration time.Duration) (string, error) {
 	claims := jwt.MapClaims{
 		"id":   userID,
 		"user": username,
+		"role": role,
 		"exp":  time.Now().Add(duration).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -91,12 +93,14 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		userID, ok := claims["id"].(float64)
+		role, _ := claims["role"].(string)
 		if !ok {
 			http.Error(w, "Invalid token claims", http.StatusUnauthorized)
 			return
 		}
 
 		ctx := context.WithValue(r.Context(), UserIDKey, uint(userID))
+		ctx = context.WithValue(ctx, UserRoleKey, role)
 		next(w, r.WithContext(ctx))
 	}
 }
@@ -153,4 +157,15 @@ func EnableCORS(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func AdminOnly(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		role, ok := r.Context().Value(UserRoleKey).(string)
+		if !ok || role != "admin" {
+			http.Error(w, "forbidden: admins only", http.StatusForbidden)
+			return
+		}
+		next(w, r)
+	}
 }

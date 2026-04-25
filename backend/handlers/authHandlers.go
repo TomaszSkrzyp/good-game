@@ -56,13 +56,16 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, us *services.UserServi
 		return
 	}
 
-	accessToken, err := middleware.GenerateToken(user.ID, user.UserName, 15*time.Minute)
+	roleName := user.Role.Name
+
+	// pass the roleName to GenerateToken
+	accessToken, err := middleware.GenerateToken(user.ID, user.UserName, roleName, 15*time.Minute)
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "Failed to create access token")
 		return
 	}
 
-	refreshToken, err := middleware.GenerateToken(user.ID, user.UserName, 7*24*time.Hour)
+	refreshToken, err := middleware.GenerateToken(user.ID, user.UserName, roleName, 7*24*time.Hour)
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "Failed to create refresh token")
 		return
@@ -83,9 +86,9 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, us *services.UserServi
 		"token":    accessToken,
 		"userName": user.UserName,
 		"email":    user.Email,
+		"role":     roleName,
 	})
 }
-
 func RefreshHandler(w http.ResponseWriter, r *http.Request, us *services.UserService) {
 	cookie, err := r.Cookie("refresh_token")
 	if err != nil {
@@ -106,8 +109,12 @@ func RefreshHandler(w http.ResponseWriter, r *http.Request, us *services.UserSer
 		return
 	}
 
-	newToken, _ := middleware.GenerateToken(user.ID, user.UserName, 15*time.Minute)
-	JSONResponse(w, http.StatusOK, map[string]string{"token": newToken})
+	newToken, _ := middleware.GenerateToken(user.ID, user.UserName, user.Role.Name, 15*time.Minute)
+
+	JSONResponse(w, http.StatusOK, map[string]interface{}{
+		"token": newToken,
+		"role":  user.Role.Name,
+	})
 }
 
 func GetProfileHandler(w http.ResponseWriter, r *http.Request, us *services.UserService) {
@@ -127,6 +134,7 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, us *services.User
 		"id":       user.ID,
 		"userName": user.UserName,
 		"email":    user.Email,
+		"role":     user.Role.Name,
 	})
 }
 
@@ -167,4 +175,20 @@ func UpdateUserSettingsHandler(w http.ResponseWriter, r *http.Request, us *servi
 	}
 
 	JSONResponse(w, http.StatusOK, map[string]string{"message": "Settings updated"})
+}
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	isProduction := os.Getenv("APP_ENV") == "production"
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		Expires:  time.Unix(0, 0),
+		HttpOnly: true,
+		Secure:   isProduction,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	JSONResponse(w, http.StatusOK, map[string]string{"message": "Logged out successfully"})
 }

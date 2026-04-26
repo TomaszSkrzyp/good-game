@@ -112,11 +112,14 @@ func FetchAndCalculateDrama(eventID string) (DramaContext, error) {
 	probs := data.WinProbability
 	if len(probs) >= 2 {
 		var totalVolatility float64
-		var probFlips int //track how many times the favorite changes
+		var probFlips int
+		var sumProb float64 // Track the sum for the average
 		minProb, maxProb := 1.0, 0.0
 
 		for i := 0; i < len(probs); i++ {
 			p := probs[i].HomeWinPercentage
+			sumProb += p
+
 			if p < minProb {
 				minProb = p
 			}
@@ -134,18 +137,36 @@ func FetchAndCalculateDrama(eventID string) (DramaContext, error) {
 			}
 		}
 
-		totalSwing := maxProb - minProb
-		ctx.IsHugeComeback = totalSwing > cfg.ComebackThreshold
+		avgHomeProb := sumProb / float64(len(probs))
+		finalProb := probs[len(probs)-1].HomeWinPercentage
 
+		homeWon := finalProb > 0.5
+		awayWon := finalProb < 0.5
+
+		var winnerAvgProb float64
+		var winnerMinProb float64
+
+		if homeWon {
+			winnerAvgProb = avgHomeProb
+			winnerMinProb = minProb
+		} else {
+			winnerAvgProb = 1.0 - avgHomeProb
+			winnerMinProb = 1.0 - maxProb
+		}
+
+		comebackAmount := 1.0 - winnerMinProb
+
+		isDeepDeficit := comebackAmount >= cfg.ComebackThreshold
+		isSustainedDeficit := winnerAvgProb <= 0.35
+
+		ctx.IsHugeComeback = isDeepDeficit && isSustainedDeficit
+
+		totalSwing := maxProb - minProb
 		probFlipBonus := float64(probFlips) * cfg.ProbFlipWeight
 
 		ctx.DramaScore += (totalVolatility * cfg.VolatilityWeight) +
 			(totalSwing * cfg.SwingWeight) +
 			probFlipBonus
-
-		finalProb := probs[len(probs)-1].HomeWinPercentage
-		homeWon := finalProb > 0.5
-		awayWon := finalProb < 0.5
 
 		var winnerLeadPct float64
 		winnerLeadPct = -1.0

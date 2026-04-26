@@ -133,6 +133,15 @@ func FilterGames(w http.ResponseWriter, r *http.Request, repo *db.GameRepository
 	JSONResponse(w, http.StatusOK, games)
 }
 
+func GetTeamQualityStats(w http.ResponseWriter, r *http.Request, repo *db.GameRepository) {
+	stats, err := repo.GetTeamQualityStats(r.Context())
+	if err != nil {
+		ErrorResponse(w, http.StatusInternalServerError, "could not retrieve team quality stats")
+		return
+	}
+	JSONResponse(w, http.StatusOK, stats)
+}
+
 func DeleteGame(w http.ResponseWriter, r *http.Request, repo *db.GameRepository) {
 	idStr := r.URL.Query().Get("id")
 	parsed, err := strconv.ParseUint(idStr, 10, 64)

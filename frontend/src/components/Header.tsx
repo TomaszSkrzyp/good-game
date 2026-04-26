@@ -9,6 +9,9 @@ const Header: Component = () => {
       <A href="/games" class="text-xl font-extrabold tracking-tight hover:text-blue-400 transition-colors">
         Good Game
       </A>
+      <A href="/stats" class="text-sm font-medium hover:text-orange-500">
+        Stats
+      </A>
       <A href="/how-it-works" class="text-sm font-medium hover:text-blue-500">
         Algorithm
       </A>

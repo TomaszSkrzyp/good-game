@@ -57,4 +57,13 @@ func RegisterGameRoutes(mux *http.ServeMux, gormDB *gorm.DB) {
 			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	}))
+
+	mux.HandleFunc("/teams/quality", middleware.OptionalAuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			handlers.GetTeamQualityStats(w, r, repo)
+		default:
+			handlers.ErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	}))
 }

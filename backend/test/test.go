@@ -8,5 +8,5 @@ import (
 
 func main() {
 
-	fmt.Println(engine.FetchAndCalculateDrama("401705002"))
+	fmt.Println(engine.FetchAndCalculateDrama("401869377"))
 }

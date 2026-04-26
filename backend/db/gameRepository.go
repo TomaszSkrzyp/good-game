@@ -94,3 +94,26 @@ func (r *GameRepository) Filter(ctx context.Context, date string, homeID, awayID
 	err := query.Offset(offset).Limit(limit).Find(&games).Error
 	return games, err
 }
+func (r *GameRepository) GetTeamQualityStats(ctx context.Context) ([]models.TeamQualityStat, error) {
+	var stats []models.TeamQualityStat
+
+	// Join teams with games to calculate the average of the game's intrinsic quality score.
+	err := r.db.WithContext(ctx).
+		Table("teams").
+		Select(`
+            teams.id as team_id, 
+            teams.name as team_name, 
+            COALESCE(AVG(games.quality_score), 0) as avg_game_quality, 
+            COUNT(games.id) as games_rated 
+        `).
+		Joins("JOIN games ON teams.id = games.home_team_id OR teams.id = games.away_team_id").
+		Group("teams.id, teams.name").
+		Order("avg_game_quality DESC").
+		Scan(&stats).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return stats, nil
+}

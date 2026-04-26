@@ -88,10 +88,7 @@ func runFetchCycle(gormDB *gorm.DB) error {
 	start := time.Now()
 	end := time.Now().AddDate(0, 0, 7)
 	rangeStr := fmt.Sprintf("%s-%s", start.Format("20060102"), end.Format("20060102"))
-	myrange := "20260320-20260321"
-	log.Println("fetching for my range")
-	engine.FetchGamesByDate(gormDB, myrange)
-	myrange = "20260420-20260421"
+	myrange := "20260420-20260421"
 	log.Println("fetching for my playoff range")
 	engine.FetchGamesByDate(gormDB, myrange)
 	log.Printf("fetching upcoming games: %s to %s", start.Format("2006-01-02"), end.Format("2006-01-02"))

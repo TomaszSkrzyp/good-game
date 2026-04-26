@@ -23,7 +23,7 @@ export interface GameQuality {
   isHugeSwing: boolean; isShootout: boolean;
   isGritty: boolean;isOvertime: boolean;
   isGame7: boolean;isElimination: boolean;
-  isPlayIn: boolean;
+  isPlayIn: boolean; isPlayoff: boolean;
 }
 
 export interface Game {
@@ -64,6 +64,12 @@ const GameItem: Component<GameItemProps> = (props) => {
     if (props.game.status !== "STATUS_FINAL") return false;
     return (props.hideScores ?? false) !== localToggle();
   };
+  const getBorderClass = () => {
+    if (q()?.isGame7) return "border-2 border-amber-500 shadow-md shadow-amber-500/20";
+    if (props.game.isPlayIn || q()?.isPlayIn) return "border-2 border-purple-500 shadow-md shadow-purple-500/20";
+    if (props.game.isPlayoff || q()?.isPlayoff) return "border-2 border-blue-500 shadow-md shadow-blue-500/20";
+    return "border border-gray-200 hover:border-blue-200";
+  };
 
   const handleStarClick = async (val: number) => {
     const currentRating = props.game.rating ?? 0;
@@ -102,7 +108,7 @@ const GameItem: Component<GameItemProps> = (props) => {
   };
 
   return (
-    <div class="bg-white border border-gray-200 rounded-xl p-5 relative flex flex-col justify-between h-full group hover:border-blue-200 transition-all">
+    <div class={`bg-white rounded-xl p-5 relative flex flex-col justify-between h-full group transition-all ${getBorderClass()}`}>
       
       <Show when={isSubmitting()}>
         <div class="absolute inset-0 bg-white/60 z-20 flex items-center justify-center backdrop-blur-sm">
@@ -195,7 +201,7 @@ const GameItem: Component<GameItemProps> = (props) => {
           <div class={`inline-block px-2 py-1 rounded text-[11px] font-black transition-all ${
               q().qualityScore >= 90 ? 'bg-indigo-600 text-white ring-4 ring-indigo-200 animate-pulse' : 
               q().qualityScore >= 70 ? 'bg-orange-500 text-white shadow-md' : 
-              q().qualityScore >= 40 ? 'bg-blue-500 text-white' : 
+              q().qualityScore >= 50 ? 'bg-blue-500 text-white' : 
               'bg-gray-100 text-gray-500'
             }`}>
               {q().qualityScore} PTS

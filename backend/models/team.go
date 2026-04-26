@@ -21,3 +21,9 @@ type TeamStats struct {
 	Losses int    `json:"losses"`
 	Season string `gorm:"index" json:"season"`
 }
+type TeamQualityStat struct {
+	TeamID         uint    `json:"teamId"`
+	TeamName       string  `json:"teamName"`
+	AvgGameQuality float64 `json:"avgGameQuality"`
+	GamesRated     int     `json:"gamesRated"`
+}

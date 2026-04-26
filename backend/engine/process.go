@@ -131,9 +131,9 @@ func saveESPNGame(gormDB *gorm.DB, event ESPNEvent) {
 	}
 	hQs := getLineScores(home.LineScores)
 	aQs := getLineScores(away.LineScores)
-
 	dramaCtx, _ := FetchAndCalculateDrama(event.ID)
 	gameQuality := CalculateFinalQuality(hScore, aScore, hQs, aQs, home.Leaders, away.Leaders, dramaCtx)
+	log.Printf("drama score: %v, quality score: %v for id: %s", dramaCtx.DramaScore, gameQuality, event.ID)
 	err = gormDB.Where(models.Game{
 		ESPNID: event.ID,
 	}).Assign(models.Game{

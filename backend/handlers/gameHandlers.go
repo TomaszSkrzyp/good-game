@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -180,13 +179,20 @@ func GetGameStats(w http.ResponseWriter, r *http.Request, repo *db.GameRepositor
 		ErrorResponse(w, http.StatusBadRequest, "Game has no ESPN ID")
 		return
 	}
-
-	stats, err := fetch.FetchGamePlayerStats(game.ESPNID, game.GameTime)
-	if err != nil {
-		log.Printf("Error fetching stats for ESPN ID %s: %v", game.ESPNID, err)
-		ErrorResponse(w, http.StatusInternalServerError, "Failed to fetch game stats")
-		return
+	// Map the DB fields directly to your response object
+	stats := fetch.GamePlayerStatsDTO{
+		HomeTopScorer:    game.HomeTopScorer,
+		HomeTopScorerPts: game.HomeTopScorerPts,
+		HomeTopAssister:  game.HomeTopAssister,
+		HomeTopAssists:   game.HomeTopAssists,
+		HomeTopRebounder: game.HomeTopRebounder,
+		HomeTopRebounds:  game.HomeTopRebounds,
+		AwayTopScorer:    game.AwayTopScorer,
+		AwayTopScorerPts: game.AwayTopScorerPts,
+		AwayTopAssister:  game.AwayTopAssister,
+		AwayTopAssists:   game.AwayTopAssists,
+		AwayTopRebounder: game.AwayTopRebounder,
+		AwayTopRebounds:  game.AwayTopRebounds,
 	}
-
 	JSONResponse(w, http.StatusOK, stats)
 }

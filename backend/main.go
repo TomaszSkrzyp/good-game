@@ -17,7 +17,8 @@ import (
 )
 
 func main() {
-	updateAll := flag.Bool("update-all", false, "Fetch and update all games for the current season")
+	bootstrap := flag.Bool("bootstrap", false, "Wipe database and repopulate everything")
+	updateAll := flag.Bool("update-all", false, "Fetch and update games without wiping users")
 	flag.Parse()
 
 	port := os.Getenv("PORT")
@@ -35,19 +36,28 @@ func main() {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+	if *bootstrap {
+		log.Println("BOOTSTRAP: Wiping all data...")
+		if err := db.HardReset(gormDB); err != nil {
+			log.Fatalf("Reset failed: %v", err)
+		}
+	}
 
 	if err := db.Initialize(ctx, gormDB); err != nil {
 		log.Fatalf("Critical error during database initialization: %v", err)
 	}
 
-	if *updateAll {
+	if *bootstrap || *updateAll {
 		season := 2026
-		log.Printf("Starting full season update for %d", season)
+		log.Printf("Starting data fetch for season %d", season)
 		if err := fetch.FetchFullSeason(gormDB, season); err != nil {
 			log.Fatalf("failed to fetch season: %v", err)
 		}
-		log.Println("Season update complete")
-		return
+		log.Println("Data sync complete")
+
+		if flag.NFlag() > 0 {
+			return
+		}
 	}
 
 	// Start the web server

@@ -180,7 +180,7 @@ const GameItem: Component<GameItemProps> = (props) => {
           </div>
         </Show>
       </div>
-
+       <Show when={props.game.status === "STATUS_FINAL"}>
       <div class="pt-4 border-t border-gray-100 flex flex-col gap-3 mt-4">
         <div class="flex justify-between items-center">
           <div class="flex flex-col">
@@ -203,6 +203,7 @@ const GameItem: Component<GameItemProps> = (props) => {
           </Show>
         </div>
       </div>
+      </Show>
     </div>
   );
 };

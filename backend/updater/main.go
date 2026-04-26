@@ -43,7 +43,7 @@ func main() {
 }
 
 func runFetchCycle(gormDB *gorm.DB) error {
-	log.Println("start fetch cycle")
+	log.Println("starting fetch cycle")
 
 	var unfinishedGames []struct {
 		Date time.Time
@@ -76,7 +76,7 @@ func runFetchCycle(gormDB *gorm.DB) error {
 
 		// refresh past games to get final scores
 		rangeStr := fmt.Sprintf("%s-%s", minDate.Format("20060102"), maxDate.Format("20060102"))
-		log.Printf("updating unfinished games for range: %s to %s", minDate.Format("2006-01-02"), maxDate.Format("2006-01-02"))
+		log.Printf("updating %v unfinished games for range: %s to %s", len(unfinishedGames), minDate.Format("2006-01-02"), maxDate.Format("2006-01-02"))
 		if err := fetch.FetchGamesByDate(gormDB, rangeStr); err != nil {
 			log.Printf("failed to refresh range %s: %v", rangeStr, err)
 			return err

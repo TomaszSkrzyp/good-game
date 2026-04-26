@@ -25,6 +25,19 @@ type Game struct {
 
 	GameQuality GameQuality `gorm:"embedded" json:"gameQuality"`
 	Status      string      `json:"status"`
+
+	HomeTopScorer    string  `json:"homeTopScorer"`
+	HomeTopScorerPts float64 `json:"homeTopScorerPts"`
+	HomeTopAssister  string  `json:"homeTopAssister"`
+	HomeTopAssists   float64 `json:"homeTopAssists"`
+	HomeTopRebounder string  `json:"homeTopRebounder"`
+	HomeTopRebounds  float64 `json:"homeTopRebounds"`
+	AwayTopScorer    string  `json:"awayTopScorer"`
+	AwayTopScorerPts float64 `json:"awayTopScorerPts"`
+	AwayTopAssister  string  `json:"awayTopAssister"`
+	AwayTopAssists   float64 `json:"awayTopAssists"`
+	AwayTopRebounder string  `json:"awayTopRebounder"`
+	AwayTopRebounds  float64 `json:"awayTopRebounds"`
 }
 
 type GameQuality struct {

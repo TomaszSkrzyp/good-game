@@ -1,4 +1,4 @@
-package fetch
+package engine
 
 // ESPN API Schema
 type ESPNResponse struct {

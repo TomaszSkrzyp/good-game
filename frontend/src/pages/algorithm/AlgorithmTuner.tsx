@@ -55,6 +55,29 @@ const AlgorithmTuner: Component<TunerProps> = (props) => {
             </div>
           </div>
         </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* playoff stakes */}
+            <div class="space-y-4">
+              <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Playoff Stakes</h4>
+              <div class="space-y-3">
+                <TunerInput label="Game 7 Bonus" value={form().game7Bonus} onInput={(v) => updateField('game7Bonus', v)} />
+                <TunerInput label="Elimination Bonus" value={form().eliminationBonus} onInput={(v) => updateField('eliminationBonus', v)} />
+                <TunerInput label="Base Playoff" value={form().playoffBonus} onInput={(v) => updateField('playoffBonus', v)} />
+              </div>
+            </div>
+
+            {/* drama weights*/}
+            <div class="space-y-4">
+              <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Win Prob Drama</h4>
+              <div class="space-y-3">
+                <TunerInput label="Volatility (Jitter)" value={form().volatilityWeight} onInput={(v) => updateField('volatilityWeight', v)} />
+                <TunerInput label="Max Swing (Comeback)" value={form().swingWeight} onInput={(v) => updateField('swingWeight', v)} />
+                <TunerInput label="Comeback % (0.80)" value={form().comebackThreshold} onInput={(v) => updateField('comebackThreshold', v)} />
+                <TunerInput label="Play-In Bonus" value={form().playInBonus} onInput={(v) => updateField('playInBonus', v)} />
+                <TunerInput label="Season Series Grudge Bonus" value={form().seasonSeriesTiedBonus} onInput={(v) => updateField('seasonSeriesTiedBonus', v)} />
+              </div>
+            </div>
+          </div>
 
         <button 
           type="submit" 
@@ -79,7 +102,7 @@ const TunerInput: Component<{ label: string, value: number, onInput: (v: number)
     <input 
       type="number" 
       value={props.value} 
-      onInput={(e) => props.onInput(parseInt(e.currentTarget.value) || 0)}
+      onInput={(e) => props.onInput(parseFloat(e.currentTarget.value) || 0)}
       class="p-2 border rounded bg-white font-mono text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
     />
   </div>

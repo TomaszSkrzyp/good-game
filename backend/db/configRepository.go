@@ -62,3 +62,35 @@ func SyncAlgorithmConfig(ctx context.Context, db *gorm.DB) error {
 	log.Println("Global config hydrated from Database.")
 	return nil
 }
+
+var defaultGameConfig = models.GameQualityConfig{
+	Margins: []models.MarginWeight{
+		{MaxMargin: 2, Points: 30},
+		{MaxMargin: 5, Points: 20},
+		{MaxMargin: 10, Points: 10},
+	},
+
+	HugeSwingBonus: 15,
+	ClutchBonus:    10,
+	OvertimeBonus:  15,
+	ShootoutBonus:  10,
+	GrittyBonus:    5,
+
+	ShootoutThreshold:    240,
+	GrittyThreshold:      185,
+	StarDuelBonus:        10,
+	StarPointsThreshold:  40,
+	BigGameBonus:         15,
+	BigScoringThreshold:  55,
+	VersatilityThreshold: 3,
+
+	EliminationBonus:      15,
+	Game7Bonus:            30,
+	PlayoffBonus:          10,
+	SeasonSeriesTiedBonus: 5,
+
+	VolatilityWeight:  3.5,
+	SwingWeight:       15.0,
+	ComebackThreshold: 0.85,
+	MaxScore:          100.0,
+}

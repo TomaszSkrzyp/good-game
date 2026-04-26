@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/tomaszSkrzyp/good-game/db"
-	"github.com/tomaszSkrzyp/good-game/fetch"
+	"github.com/tomaszSkrzyp/good-game/engine"
 	"github.com/tomaszSkrzyp/good-game/middleware"
 	"github.com/tomaszSkrzyp/good-game/routes"
 	"gorm.io/driver/postgres"
@@ -50,7 +50,7 @@ func main() {
 	if *bootstrap || *updateAll {
 		season := 2026
 		log.Printf("Starting data fetch for season %d", season)
-		if err := fetch.FetchFullSeason(gormDB, season); err != nil {
+		if err := engine.FetchFullSeason(gormDB, season); err != nil {
 			log.Fatalf("failed to fetch season: %v", err)
 		}
 		log.Println("Data sync complete")

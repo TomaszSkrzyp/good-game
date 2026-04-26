@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/tomaszSkrzyp/good-game/db"
-	"github.com/tomaszSkrzyp/good-game/fetch"
+	"github.com/tomaszSkrzyp/good-game/engine"
 	"github.com/tomaszSkrzyp/good-game/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -76,8 +76,9 @@ func runFetchCycle(gormDB *gorm.DB) error {
 
 		// refresh past games to get final scores
 		rangeStr := fmt.Sprintf("%s-%s", minDate.Format("20060102"), maxDate.Format("20060102"))
+
 		log.Printf("updating %v unfinished games for range: %s to %s", len(unfinishedGames), minDate.Format("2006-01-02"), maxDate.Format("2006-01-02"))
-		if err := fetch.FetchGamesByDate(gormDB, rangeStr); err != nil {
+		if err := engine.FetchGamesByDate(gormDB, rangeStr); err != nil {
 			log.Printf("failed to refresh range %s: %v", rangeStr, err)
 			return err
 		}
@@ -87,9 +88,14 @@ func runFetchCycle(gormDB *gorm.DB) error {
 	start := time.Now()
 	end := time.Now().AddDate(0, 0, 7)
 	rangeStr := fmt.Sprintf("%s-%s", start.Format("20060102"), end.Format("20060102"))
-
+	myrange := "20260320-20260321"
+	log.Println("fetching for my range")
+	engine.FetchGamesByDate(gormDB, myrange)
+	myrange = "20260420-20260421"
+	log.Println("fetching for my playoff range")
+	engine.FetchGamesByDate(gormDB, myrange)
 	log.Printf("fetching upcoming games: %s to %s", start.Format("2006-01-02"), end.Format("2006-01-02"))
-	if err := fetch.FetchGamesByDate(gormDB, rangeStr); err != nil {
+	if err := engine.FetchGamesByDate(gormDB, rangeStr); err != nil {
 		log.Printf("failed to fetch upcoming %s: %v", rangeStr, err)
 		return err
 	}

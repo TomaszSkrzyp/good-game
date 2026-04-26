@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/tomaszSkrzyp/good-game/db"
-	"github.com/tomaszSkrzyp/good-game/fetch"
+	"github.com/tomaszSkrzyp/good-game/engine"
 	"github.com/tomaszSkrzyp/good-game/middleware"
 	"github.com/tomaszSkrzyp/good-game/models"
 )
@@ -180,7 +180,7 @@ func GetGameStats(w http.ResponseWriter, r *http.Request, repo *db.GameRepositor
 		return
 	}
 	// Map the DB fields directly to your response object
-	stats := fetch.GamePlayerStatsDTO{
+	stats := engine.GamePlayerStatsDTO{
 		HomeTopScorer:    game.HomeTopScorer,
 		HomeTopScorerPts: game.HomeTopScorerPts,
 		HomeTopAssister:  game.HomeTopAssister,

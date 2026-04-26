@@ -1,4 +1,4 @@
-package fetch
+package engine
 
 import (
 	"math"
@@ -6,11 +6,25 @@ import (
 	"github.com/tomaszSkrzyp/good-game/models"
 )
 
-func CalculateFinalQuality(hScore, aScore int, hQs, aQs []int, homeLeaders, awayLeaders []ESPNLeaderCategory) models.GameQuality {
-	var score float64 = 0
-	quality := models.GameQuality{}
-	cfg := models.GetConfig() // get current config
-	// margin points
+// CalculateFinalQuality now takes drama context fetched from the summary API
+func CalculateFinalQuality(
+	hScore, aScore int,
+	hQs, aQs []int,
+	homeLeaders, awayLeaders []ESPNLeaderCategory,
+	dramaContext DramaContext,
+) models.GameQuality {
+
+	var score float64 = dramaContext.DramaScore
+	quality := models.GameQuality{
+		IsHugeSwing:   dramaContext.IsHugeComeback,
+		IsGame7:       dramaContext.IsGame7,
+		IsElimination: dramaContext.IsElimination,
+		IsPlayoff:     dramaContext.IsPlayoff,
+		IsPlayIn:      dramaContext.IsPlayIn,
+	}
+
+	cfg := models.GetConfig()
+
 	margin := int(math.Abs(float64(hScore - aScore)))
 	for _, m := range cfg.Margins {
 		if margin <= m.MaxMargin {
@@ -18,7 +32,7 @@ func CalculateFinalQuality(hScore, aScore int, hQs, aQs []int, homeLeaders, away
 			break
 		}
 	}
-	// check for huge swing and clutch
+
 	hRunning, aRunning := 0, 0
 	for i := 0; i < 3 && i < len(hQs); i++ {
 		hRunning += hQs[i]
@@ -35,12 +49,12 @@ func CalculateFinalQuality(hScore, aScore int, hQs, aQs []int, homeLeaders, away
 		quality.IsClutch = true
 		score += float64(cfg.ClutchBonus)
 	}
+
 	if len(hQs) > 4 {
 		quality.IsOvertime = true
 		score += float64(cfg.OvertimeBonus)
 	}
 
-	// shootout or gritty
 	totalPoints := hScore + aScore
 	if totalPoints >= cfg.ShootoutThreshold {
 		quality.IsShootout = true
@@ -52,9 +66,8 @@ func CalculateFinalQuality(hScore, aScore int, hQs, aQs []int, homeLeaders, away
 
 	playerPoints := make(map[string]float64)
 	playerVersatility := make(map[string]int)
-	homeHasStar := false
-	awayHasStar := false
-	// check for star duels and big games based on player performance
+	homeHasStar, awayHasStar := false, false
+
 	processLeaders := func(leaders []ESPNLeaderCategory, isHome bool) {
 		for _, cat := range leaders {
 			for _, l := range cat.Leaders {
@@ -87,6 +100,7 @@ func CalculateFinalQuality(hScore, aScore int, hQs, aQs []int, homeLeaders, away
 		quality.IsStarDuel = true
 		score += float64(cfg.StarDuelBonus)
 	}
+
 	for pID, count := range playerVersatility {
 		if count >= 3 && playerPoints[pID] >= 30 {
 			quality.IsBigGame = true
@@ -95,7 +109,6 @@ func CalculateFinalQuality(hScore, aScore int, hQs, aQs []int, homeLeaders, away
 		}
 	}
 
-	// Cap at 100
 	if score > 100 {
 		score = 100
 	}

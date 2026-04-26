@@ -115,20 +115,3 @@ func SeedTeams(ctx context.Context, db *gorm.DB) {
 		}
 	}
 }
-
-var defaultGameConfig = models.GameQualityConfig{
-	Margins: []models.MarginWeight{
-		{MaxMargin: 3, Points: 45},
-		{MaxMargin: 7, Points: 30},
-		{MaxMargin: 12, Points: 15},
-	},
-	HugeSwingBonus:      25,
-	ClutchBonus:         20,
-	OvertimeBonus:       15,
-	ShootoutBonus:       15,
-	ShootoutThreshold:   235,
-	GrittyThreshold:     200,
-	StarDuelBonus:       20,
-	StarPointsThreshold: 35,
-	BigGameBonus:        15,
-}

@@ -22,6 +22,8 @@ export interface GameQuality {
   isClutch: boolean; isStarDuel: boolean;
   isHugeSwing: boolean; isShootout: boolean;
   isGritty: boolean;isOvertime: boolean;
+  isGame7: boolean;isElimination: boolean;
+  isPlayIn: boolean;
 }
 
 export interface Game {
@@ -36,6 +38,8 @@ export interface Game {
   rating?: number;
   avgRating?: number;
   ratingCount?: number;
+  isPlayoff: boolean;
+  isPlayIn: boolean;
 }
 
 interface GameItemProps {
@@ -174,10 +178,28 @@ const GameItem: Component<GameItemProps> = (props) => {
             <Show when={q().isHugeSwing}><Badge class="bg-green-50 text-green-600" title="Big lead closed in 4th quarter">Huge Swing</Badge></Show>
             <Show when={q().isShootout}><Badge class="bg-pink-50 text-pink-600" title="High total points shootout">Shootout</Badge></Show>
             <Show when={q().isGritty}><Badge class="bg-gray-50 text-gray-600" title="Low scoring defensive game">Gritty</Badge></Show>
+            <Show when={q().isGame7}>
+            <Badge class="bg-amber-500 text-white border-amber-600 animate-pulse" title="Winner takes the series">Series Decider</Badge>
+            </Show>
+            <Show when={q().isElimination}>
+              <Badge class="bg-red-600 text-white border-red-700" title="Win or go home game">Elimination</Badge>
+            </Show>
+            <Show when={props.game.isPlayoff && !q().isElimination}>
+              <Badge class="bg-blue-900 text-white">Playoffs</Badge>
+            </Show>
+            <Show when={props.game.isPlayIn}>
+              <Badge class="bg-blue-900 text-white">Play-In tournament</Badge>
+            </Show>
+            
           </div>
-          <div class={`inline-block px-2 py-1 rounded text-[11px] font-black ${q().qualityScore >= 70 ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
-            {q().qualityScore} PTS
-          </div>
+          <div class={`inline-block px-2 py-1 rounded text-[11px] font-black transition-all ${
+              q().qualityScore >= 90 ? 'bg-indigo-600 text-white ring-4 ring-indigo-200 animate-pulse' : 
+              q().qualityScore >= 70 ? 'bg-orange-500 text-white shadow-md' : 
+              q().qualityScore >= 40 ? 'bg-blue-500 text-white' : 
+              'bg-gray-100 text-gray-500'
+            }`}>
+              {q().qualityScore} PTS
+            </div>
         </Show>
       </div>
        <Show when={props.game.status === "STATUS_FINAL"}>

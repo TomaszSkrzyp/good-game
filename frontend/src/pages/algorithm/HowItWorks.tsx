@@ -15,6 +15,12 @@ interface GameQualityConfig {
   starDuelBonus: number;
   starPointsThreshold: number;
   bigGameBonus: number;
+  eliminationBonus: number;
+  game7Bonus: number;
+  playoffBonus: number;
+  volatilityWeight: number;
+  swingWeight: number;
+  comebackThreshold: number;
 }
 
 const HowItWorks: Component = () => {
@@ -87,6 +93,13 @@ const HowItWorks: Component = () => {
             Badge Legend
           </h2>
           <div class="grid grid-cols-1 gap-3">
+
+              <BadgeDesc label="Game 7" color="bg-amber-100 text-amber-800 border-amber-300 font-black shadow-sm"
+                desc={`The ultimate stakes. Winner takes the series. (+${config()?.game7Bonus} Pts)`} />
+      
+              <BadgeDesc label="Elimination" color="bg-red-100 text-red-800 border-red-300 font-bold"
+                  desc={`Win or go home for at least one team. (+${config()?.eliminationBonus} Pts)`} />
+                  
               <BadgeDesc label="Clutch" color="bg-red-50 text-red-700 border-red-100"
                 desc={`Final margin ≤ 3 pts, or game was within 8 pts entering the 4th quarter. (+${config()?.clutchBonus} Pts)`} />
     
@@ -107,6 +120,7 @@ const HowItWorks: Component = () => {
 
               <BadgeDesc label="Big Game" color="bg-amber-50 text-amber-700 border-amber-100"
                 desc={`Triggered by historic individual play: a 50pt performance or a 30pt Triple-Double. (+${config()?.bigGameBonus} Pts)`} />
+              
             </div>
           </div>
         </section>

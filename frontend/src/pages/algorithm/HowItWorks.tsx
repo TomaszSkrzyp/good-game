@@ -40,7 +40,7 @@ const HowItWorks: Component = () => {
         <h1 class="text-4xl font-extrabold text-gray-900 mb-2">The Quality Algorithm</h1>
         <p class="text-gray-500 uppercase text-xs tracking-widest font-bold">Automatic "Good Game" calculation breakdown.</p>
       </header>
-
+      <Show when={isAdmin()}>
       <div class="mb-8 flex justify-end">
         <button 
           onClick={() => setShowTuner(!showTuner())}
@@ -50,7 +50,7 @@ const HowItWorks: Component = () => {
         </button>
       </div>
 
-      <Show when={showTuner() && config() && isAdmin()}>
+      <Show when={showTuner() && config() }>
         <div class="mb-12 animate-in fade-in slide-in-from-top-4 duration-300">
           <AlgorithmTuner 
             initialConfig={config()!} 
@@ -58,6 +58,7 @@ const HowItWorks: Component = () => {
             title="Global Admin Controls"
           />
         </div>
+      </Show>
       </Show>
 
       <Show when={!config.loading} fallback={<p class="text-center py-10 italic lowercase text-gray-400">loading logic...</p>}>

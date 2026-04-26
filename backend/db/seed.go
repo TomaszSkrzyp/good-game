@@ -58,3 +58,77 @@ func SeedAdminUser(ctx context.Context, db *gorm.DB) {
 		}
 	}
 }
+
+func BuildConferenceMap(ctx context.Context, db *gorm.DB) error {
+	r := NewConferenceRepository(db)
+	m, err := r.NameToIDMap()
+	if err != nil {
+		return err
+	}
+	ConferenceNameToIDMap = m
+	return nil
+}
+
+var TeamAbbrToIDMap = make(map[string]uint)
+
+func BuildTeamMap(ctx context.Context, db *gorm.DB) error {
+	var teams []models.Team
+	if err := db.WithContext(ctx).Find(&teams).Error; err != nil {
+		return err
+	}
+
+	for _, t := range teams {
+		TeamAbbrToIDMap[t.Abbreviation] = t.ID
+	}
+	return nil
+}
+
+func SeedTeams(ctx context.Context, db *gorm.DB) {
+	data := map[string][]struct{ Name, Abbr string }{
+		"Eastern Conference": {
+			{"Atlanta Hawks", "ATL"}, {"Boston Celtics", "BOS"}, {"Brooklyn Nets", "BKN"},
+			{"Charlotte Hornets", "CHA"}, {"Chicago Bulls", "CHI"}, {"Cleveland Cavaliers", "CLE"},
+			{"Detroit Pistons", "DET"}, {"Indiana Pacers", "IND"}, {"Miami Heat", "MIA"},
+			{"Milwaukee Bucks", "MIL"}, {"New York Knicks", "NY"}, {"Orlando Magic", "ORL"},
+			{"Philadelphia 76ers", "PHI"}, {"Toronto Raptors", "TOR"}, {"Washington Wizards", "WSH"},
+			{"TBD", "TBD"},
+		},
+		"Western Conference": {
+			{"Dallas Mavericks", "DAL"}, {"Denver Nuggets", "DEN"}, {"Golden State Warriors", "GS"},
+			{"Houston Rockets", "HOU"}, {"Los Angeles Clippers", "LAC"}, {"Los Angeles Lakers", "LAL"},
+			{"Memphis Grizzlies", "MEM"}, {"Minnesota Timberwolves", "MIN"}, {"New Orleans Pelicans", "NO"},
+			{"Oklahoma City Thunder", "OKC"}, {"Phoenix Suns", "PHX"}, {"Portland Trail Blazers", "POR"},
+			{"Sacramento Kings", "SAC"}, {"San Antonio Spurs", "SA"}, {"Utah Jazz", "UTAH"},
+		},
+	}
+
+	for confName, teams := range data {
+		var conf models.Conference
+		db.FirstOrCreate(&conf, models.Conference{Name: confName})
+
+		for _, t := range teams {
+			db.WithContext(ctx).Where(models.Team{Name: t.Name}).FirstOrCreate(&models.Team{
+				Name:         t.Name,
+				Abbreviation: t.Abbr,
+				ConferenceID: conf.ID,
+			})
+		}
+	}
+}
+
+var defaultGameConfig = models.GameQualityConfig{
+	Margins: []models.MarginWeight{
+		{MaxMargin: 3, Points: 45},
+		{MaxMargin: 7, Points: 30},
+		{MaxMargin: 12, Points: 15},
+	},
+	HugeSwingBonus:      25,
+	ClutchBonus:         20,
+	OvertimeBonus:       15,
+	ShootoutBonus:       15,
+	ShootoutThreshold:   235,
+	GrittyThreshold:     200,
+	StarDuelBonus:       20,
+	StarPointsThreshold: 35,
+	BigGameBonus:        15,
+}

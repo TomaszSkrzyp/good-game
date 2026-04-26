@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -53,7 +52,7 @@ func main() {
 
 	// Start the web server
 	router := routes.NewRouter(gormDB)
-	fmt.Printf("Server running on: http://localhost:%s\n", port)
+	log.Printf("Server running on: http://localhost:%s\n", port)
 
 	if err := http.ListenAndServe(":"+port, middleware.Recovery(router)); err != nil {
 		log.Fatal(err)

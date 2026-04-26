@@ -18,6 +18,7 @@ func Initialize(ctx context.Context, db *gorm.DB) error {
 		&models.Conference{},
 		&models.TeamStats{},
 		&models.UserReaction{},
+		&models.ConfigRecord{},
 	)
 	if err != nil {
 		return fmt.Errorf("migration failed: %w", err)
@@ -26,6 +27,10 @@ func Initialize(ctx context.Context, db *gorm.DB) error {
 	SeedRoles(ctx, db)
 	SeedAdminUser(ctx, db)
 	SeedTeams(ctx, db)
+
+	if err := SyncAlgorithmConfig(ctx, db); err != nil {
+		log.Printf("Warning: Could not sync algorithm config: %v", err)
+	}
 
 	if err := BuildConferenceMap(ctx, db); err != nil {
 		log.Printf("Warning: BuildConferenceMap failed: %v", err)

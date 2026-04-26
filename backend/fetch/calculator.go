@@ -9,7 +9,7 @@ import (
 func CalculateFinalQuality(hScore, aScore int, hQs, aQs []int, homeLeaders, awayLeaders []ESPNLeaderCategory) models.GameQuality {
 	var score float64 = 0
 	quality := models.GameQuality{}
-	cfg := CurrentConfig // get current config
+	cfg := models.GetConfig() // get current config
 	// margin points
 	margin := int(math.Abs(float64(hScore - aScore)))
 	for _, m := range cfg.Margins {

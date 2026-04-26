@@ -223,7 +223,7 @@ func saveESPNGame(gormDB *gorm.DB, event ESPNEvent) {
 		return
 	}
 	if event.Status.Type.Name == "STATUS_POSTPONED" {
-		fmt.Println("game has been pospotend hence its skipped")
+		log.Println("game has been pospotend hence its skipped")
 		return
 	}
 	comp := event.Competitions[0]
@@ -258,7 +258,7 @@ func saveESPNGame(gormDB *gorm.DB, event ESPNEvent) {
 		return
 	}
 	if event.Status.Type.Name != "STATUS_FINAL" {
-		fmt.Printf(`Skipping unfinished game %s with status %s of %s and teams %s vs %s `+"\n", event.ID, event.Status.Type.Name, event.Date, home.Team.Abbreviation, away.Team.Abbreviation)
+		log.Printf(`Skipping unfinished game %s with status %s of %s and teams %s vs %s `+"\n", event.ID, event.Status.Type.Name, event.Date, home.Team.Abbreviation, away.Team.Abbreviation)
 
 		err = gormDB.Where(models.Game{
 			ESPNID: event.ID,

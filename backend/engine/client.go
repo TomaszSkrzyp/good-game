@@ -31,7 +31,7 @@ func FetchFullSeason(gormDB *gorm.DB, year int) error {
 			log.Printf("Error fetching range %s: %v", dateParam, err)
 		}
 
-		time.Sleep(500 * time.Millisecond) // Respectful throttling
+		time.Sleep(500 * time.Millisecond)
 	}
 	return nil
 }

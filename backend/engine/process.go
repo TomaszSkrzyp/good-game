@@ -13,9 +13,7 @@ import (
 )
 
 func getTopPlayer(leaders []ESPNLeaderCategory, statName string) string {
-
 	for _, category := range leaders {
-
 		if category.Name == statName && len(category.Leaders) > 0 {
 			if category.Leaders[0].Athlete.DisplayName == "" {
 				continue
@@ -34,6 +32,7 @@ func getTopPlayerAmount(leaders []ESPNLeaderCategory, statName string) float64 {
 	}
 	return 0
 }
+
 func saveESPNGame(gormDB *gorm.DB, event ESPNEvent) {
 	if len(event.Competitions) == 0 {
 		return
@@ -75,6 +74,7 @@ func saveESPNGame(gormDB *gorm.DB, event ESPNEvent) {
 		log.Printf("Skip: Date parse error for event %s: %v", event.ID, err)
 		return
 	}
+
 	gameStats := GamePlayerStatsDTO{
 		HomeTopScorer:    getTopPlayer(home.Leaders, "points"),
 		HomeTopScorerPts: getTopPlayerAmount(home.Leaders, "points"),
@@ -90,22 +90,27 @@ func saveESPNGame(gormDB *gorm.DB, event ESPNEvent) {
 		AwayTopRebounder: getTopPlayer(away.Leaders, "rebounds"),
 		AwayTopRebounds:  getTopPlayerAmount(away.Leaders, "rebounds"),
 	}
-	//logic for games that are NOT finished yet (Pre-game or Live)
+
 	if event.Status.Type.Name != "STATUS_FINAL" {
 		log.Printf("Syncing unfinished game %s (%s vs %s)", event.ID, home.Team.Abbreviation, away.Team.Abbreviation)
 
 		err = gormDB.Where(models.Game{ESPNID: event.ID}).Assign(models.Game{
-			HomeTeamID: homeID,
-			AwayTeamID: awayID,
-			GameTime:   parsedTime,
-			Status:     event.Status.Type.Name,
-			// Persisting Stats for live too
-			HomeTopScorer: gameStats.HomeTopScorer, HomeTopScorerPts: gameStats.HomeTopScorerPts,
-			HomeTopAssister: gameStats.HomeTopAssister, HomeTopAssists: gameStats.HomeTopAssists,
-			HomeTopRebounder: gameStats.HomeTopRebounder, HomeTopRebounds: gameStats.HomeTopRebounds,
-			AwayTopScorer: gameStats.AwayTopScorer, AwayTopScorerPts: gameStats.AwayTopScorerPts,
-			AwayTopAssister: gameStats.AwayTopAssister, AwayTopAssists: gameStats.AwayTopAssists,
-			AwayTopRebounder: gameStats.AwayTopRebounder, AwayTopRebounds: gameStats.AwayTopRebounds,
+			HomeTeamID:       homeID,
+			AwayTeamID:       awayID,
+			GameTime:         parsedTime,
+			Status:           event.Status.Type.Name,
+			HomeTopScorer:    gameStats.HomeTopScorer,
+			HomeTopScorerPts: gameStats.HomeTopScorerPts,
+			HomeTopAssister:  gameStats.HomeTopAssister,
+			HomeTopAssists:   gameStats.HomeTopAssists,
+			HomeTopRebounder: gameStats.HomeTopRebounder,
+			HomeTopRebounds:  gameStats.HomeTopRebounds,
+			AwayTopScorer:    gameStats.AwayTopScorer,
+			AwayTopScorerPts: gameStats.AwayTopScorerPts,
+			AwayTopAssister:  gameStats.AwayTopAssister,
+			AwayTopAssists:   gameStats.AwayTopAssists,
+			AwayTopRebounder: gameStats.AwayTopRebounder,
+			AwayTopRebounds:  gameStats.AwayTopRebounds,
 		}).FirstOrCreate(&models.Game{}).Error
 
 		if err != nil {
@@ -114,7 +119,6 @@ func saveESPNGame(gormDB *gorm.DB, event ESPNEvent) {
 		return
 	}
 
-	//logic for FINISHED games
 	hScore, _ := strconv.Atoi(home.Score)
 	aScore, _ := strconv.Atoi(away.Score)
 
@@ -128,25 +132,30 @@ func saveESPNGame(gormDB *gorm.DB, event ESPNEvent) {
 	hQs := getLineScores(home.LineScores)
 	aQs := getLineScores(away.LineScores)
 
-	// Calculate Game Quality
 	dramaCtx, _ := FetchAndCalculateDrama(event.ID)
 	gameQuality := CalculateFinalQuality(hScore, aScore, hQs, aQs, home.Leaders, away.Leaders, dramaCtx)
 	err = gormDB.Where(models.Game{
 		ESPNID: event.ID,
 	}).Assign(models.Game{
-		HomeTeamID:     homeID,
-		AwayTeamID:     awayID,
-		GameTime:       parsedTime,
-		HomeTeamPoints: uint(hScore),
-		AwayTeamPoints: uint(aScore),
-		GameQuality:    gameQuality,
-		Status:         event.Status.Type.Name,
-		HomeTopScorer:  gameStats.HomeTopScorer, HomeTopScorerPts: gameStats.HomeTopScorerPts,
-		HomeTopAssister: gameStats.HomeTopAssister, HomeTopAssists: gameStats.HomeTopAssists,
-		HomeTopRebounder: gameStats.HomeTopRebounder, HomeTopRebounds: gameStats.HomeTopRebounds,
-		AwayTopScorer: gameStats.AwayTopScorer, AwayTopScorerPts: gameStats.AwayTopScorerPts,
-		AwayTopAssister: gameStats.AwayTopAssister, AwayTopAssists: gameStats.AwayTopAssists,
-		AwayTopRebounder: gameStats.AwayTopRebounder, AwayTopRebounds: gameStats.AwayTopRebounds,
+		HomeTeamID:       homeID,
+		AwayTeamID:       awayID,
+		GameTime:         parsedTime,
+		HomeTeamPoints:   uint(hScore),
+		AwayTeamPoints:   uint(aScore),
+		GameQuality:      gameQuality,
+		Status:           event.Status.Type.Name,
+		HomeTopScorer:    gameStats.HomeTopScorer,
+		HomeTopScorerPts: gameStats.HomeTopScorerPts,
+		HomeTopAssister:  gameStats.HomeTopAssister,
+		HomeTopAssists:   gameStats.HomeTopAssists,
+		HomeTopRebounder: gameStats.HomeTopRebounder,
+		HomeTopRebounds:  gameStats.HomeTopRebounds,
+		AwayTopScorer:    gameStats.AwayTopScorer,
+		AwayTopScorerPts: gameStats.AwayTopScorerPts,
+		AwayTopAssister:  gameStats.AwayTopAssister,
+		AwayTopAssists:   gameStats.AwayTopAssists,
+		AwayTopRebounder: gameStats.AwayTopRebounder,
+		AwayTopRebounds:  gameStats.AwayTopRebounds,
 	}).FirstOrCreate(&models.Game{}).Error
 
 	if err != nil {
@@ -157,7 +166,7 @@ func saveESPNGame(gormDB *gorm.DB, event ESPNEvent) {
 func parseGameTime(dateStr string) (time.Time, error) {
 	layouts := []string{
 		time.RFC3339,
-		"2006-01-02T15:04Z", // ESPN specific (no seconds)
+		"2006-01-02T15:04Z",
 		"2006-01-02T15:04:05.000Z",
 	}
 

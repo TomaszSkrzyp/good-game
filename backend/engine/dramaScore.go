@@ -16,9 +16,18 @@ type WinProbabilityData struct {
 		HomeWinPercentage float64 `json:"homeWinPercentage"`
 	} `json:"winprobability"`
 	SeasonSeries []struct {
-		Type        string `json:"type"`        // "playoff" or "season"
-		SeriesScore string `json:"seriesScore"` // "2-1" or "3-3"
+		Type        string `json:"type"`
+		SeriesScore string `json:"seriesScore"`
 	} `json:"seasonseries"`
+	Boxscore struct {
+		Teams []struct {
+			HomeAway   string `json:"homeAway"`
+			Statistics []struct {
+				Name         string `json:"name"`
+				DisplayValue string `json:"displayValue"`
+			} `json:"statistics"`
+		} `json:"teams"`
+	} `json:"boxscore"`
 }
 
 type DramaContext struct {
@@ -42,12 +51,26 @@ func FetchAndCalculateDrama(eventID string) (DramaContext, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 		return DramaContext{}, err
 	}
-
 	ctx := DramaContext{}
 	cfg := models.GetConfig()
 
+	homeLeadPct := -1.0
+	awayLeadPct := -1.0
+
+	for _, team := range data.Boxscore.Teams {
+		isHome := team.HomeAway == "home"
+		for _, stat := range team.Statistics {
+			if stat.Name == "leadPercentage" {
+				pct, _ := strconv.ParseFloat(stat.DisplayValue, 64)
+				if isHome {
+					homeLeadPct = pct
+				} else {
+					awayLeadPct = pct
+				}
+			}
+		}
+	}
 	for _, series := range data.SeasonSeries {
-		fmt.Println(series.Type)
 		if series.Type == "playoff" || series.Type == "play-in" {
 			if series.Type == "playoff" {
 				ctx.IsPlayoff = true
@@ -63,15 +86,12 @@ func FetchAndCalculateDrama(eventID string) (DramaContext, error) {
 
 				if winA == 3 && winB == 3 {
 					ctx.IsGame7 = true
-					ctx.DramaScore += float64(cfg.Game7Bonus)
+					ctx.DramaScore += cfg.Game7Bonus
 				} else if winA == 3 || winB == 3 {
 					ctx.IsElimination = true
-					ctx.DramaScore += float64(cfg.EliminationBonus)
+					ctx.DramaScore += cfg.EliminationBonus
 				} else if series.Type == "play-in" {
 					ctx.IsElimination = true
-					ctx.DramaScore += float64(cfg.PlayInBonus)
-				} else {
-					ctx.DramaScore += float64(cfg.PlayoffBonus)
 				}
 			}
 		}
@@ -83,15 +103,16 @@ func FetchAndCalculateDrama(eventID string) (DramaContext, error) {
 				winB, _ := strconv.Atoi(scores[1])
 
 				if winA == 1 || winB == 1 {
-					ctx.DramaScore += float64(cfg.SeasonSeriesTiedBonus)
+					ctx.DramaScore += cfg.SeasonSeriesTiedBonus
+
 				}
 			}
 		}
 	}
-
 	probs := data.WinProbability
 	if len(probs) >= 2 {
 		var totalVolatility float64
+		var probFlips int //track how many times the favorite changes
 		minProb, maxProb := 1.0, 0.0
 
 		for i := 0; i < len(probs); i++ {
@@ -104,14 +125,48 @@ func FetchAndCalculateDrama(eventID string) (DramaContext, error) {
 			}
 
 			if i > 0 {
-				totalVolatility += math.Abs(p - probs[i-1].HomeWinPercentage)
+				prevP := probs[i-1].HomeWinPercentage
+				totalVolatility += math.Abs(p - prevP)
+
+				if (prevP > 0.5 && p < 0.5) || (prevP < 0.5 && p > 0.5) {
+					probFlips++
+				}
 			}
 		}
 
 		totalSwing := maxProb - minProb
 		ctx.IsHugeComeback = totalSwing > cfg.ComebackThreshold
-		ctx.DramaScore += (totalVolatility * cfg.VolatilityWeight) + (totalSwing * cfg.SwingWeight)
-	}
 
+		probFlipBonus := float64(probFlips) * cfg.ProbFlipWeight
+
+		ctx.DramaScore += (totalVolatility * cfg.VolatilityWeight) +
+			(totalSwing * cfg.SwingWeight) +
+			probFlipBonus
+
+		finalProb := probs[len(probs)-1].HomeWinPercentage
+		homeWon := finalProb > 0.5
+		awayWon := finalProb < 0.5
+
+		var winnerLeadPct float64
+		winnerLeadPct = -1.0
+
+		if homeWon && homeLeadPct >= 0 {
+			winnerLeadPct = homeLeadPct
+		} else if awayWon && awayLeadPct >= 0 {
+			winnerLeadPct = awayLeadPct
+		}
+
+		if winnerLeadPct >= 0 {
+			stolenBonus := math.Max(cfg.StolenGameMaxLead-winnerLeadPct, 0) * cfg.StolenGameWeight
+
+			if stolenBonus > 0 {
+				ctx.DramaScore += stolenBonus
+
+				if winnerLeadPct < (cfg.StolenGameMaxLead / 2) {
+					ctx.IsHugeComeback = true
+				}
+			}
+		}
+	}
 	return ctx, nil
 }

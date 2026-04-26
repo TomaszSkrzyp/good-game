@@ -16,6 +16,7 @@ type ConfigRepository struct {
 func NewConfigRepository(db *gorm.DB) *ConfigRepository {
 	return &ConfigRepository{db: db}
 }
+
 func (r *ConfigRepository) SaveGameQuality(ctx context.Context, cfg models.GameQualityConfig) error {
 	record := models.ConfigRecord{
 		Key:  "game_quality",
@@ -64,33 +65,29 @@ func SyncAlgorithmConfig(ctx context.Context, db *gorm.DB) error {
 }
 
 var defaultGameConfig = models.GameQualityConfig{
-	Margins: []models.MarginWeight{
-		{MaxMargin: 2, Points: 30},
-		{MaxMargin: 5, Points: 20},
-		{MaxMargin: 10, Points: 10},
-	},
-
-	HugeSwingBonus: 15,
-	ClutchBonus:    10,
-	OvertimeBonus:  15,
-	ShootoutBonus:  10,
-	GrittyBonus:    5,
-
-	ShootoutThreshold:    240,
-	GrittyThreshold:      185,
-	StarDuelBonus:        10,
-	StarPointsThreshold:  40,
-	BigGameBonus:         15,
-	BigScoringThreshold:  55,
-	VersatilityThreshold: 3,
-
-	EliminationBonus:      15,
-	Game7Bonus:            30,
-	PlayoffBonus:          10,
-	SeasonSeriesTiedBonus: 5,
-
-	VolatilityWeight:  3.5,
-	SwingWeight:       15.0,
+	VolatilityWeight:  1.0,
+	SwingWeight:       5.0,
 	ComebackThreshold: 0.85,
+
+	// 0pt margin gives 20 pts. decays to 0 pts at 17pt margin
+	MaxMarginBonus:  20.0,
+	MarginDecayRate: 1.2,
+	//minimal amount of points to get a bonus
+	StarPointsBase:       30.0,
+	StarPointsMultiplier: 0.5,
+
+	// stakes
+	OvertimeBonus:         8.0,
+	EliminationBonus:      3.0,
+	Game7Bonus:            5.0,
+	SeasonSeriesTiedBonus: 3.0,
+	StarDuelBonus:         5.0,
+
+	ShootoutThreshold: 240,
+	GrittyThreshold:   185,
 	MaxScore:          100.0,
+
+	ProbFlipWeight:    0.5,
+	StolenGameMaxLead: 40.0,
+	StolenGameWeight:  0.5,
 }

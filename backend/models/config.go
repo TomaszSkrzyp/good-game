@@ -14,37 +14,35 @@ type ConfigRecord struct {
 	Data GameQualityConfig `gorm:"type:jsonb"`
 }
 
-type MarginWeight struct {
-	MaxMargin int `json:"maxMargin"`
-	Points    int `json:"points"`
-}
-
 type GameQualityConfig struct {
-	Margins              []MarginWeight `json:"margins"`
-	HugeSwingBonus       int            `json:"hugeSwingBonus"`
-	ClutchBonus          int            `json:"clutchBonus"`
-	OvertimeBonus        int            `json:"overtimeBonus"`
-	ShootoutBonus        int            `json:"shootoutBonus"`
-	ShootoutThreshold    int            `json:"shootoutThreshold"`
-	GrittyThreshold      int            `json:"grittyThreshold"`
-	GrittyBonus          int            `json:"grittyBonus"`
-	StarDuelBonus        int            `json:"starDuelBonus"`
-	StarPointsThreshold  int            `json:"starPointsThreshold"`
-	BigGameBonus         int            `json:"bigGameBonus"`
-	BigScoringThreshold  int            `json:"bigScoringThreshold"`
-	VersatilityThreshold int            `json:"versatilityThreshold"`
+	// core win probability score
+	VolatilityWeight float64 `json:"volatilityWeight"`
+	SwingWeight      float64 `json:"swingWeight"`
 
-	// Playoff & Drama Config
-	EliminationBonus  int     `json:"eliminationBonus"`
-	Game7Bonus        int     `json:"game7Bonus"`
-	PlayoffBonus      int     `json:"playoffBonus"`
-	VolatilityWeight  float64 `json:"volatilityWeight"`
-	SwingWeight       float64 `json:"swingWeight"`
+	// continuous margin calculation
+	MaxMarginBonus  float64 `json:"maxMarginBonus"`
+	MarginDecayRate float64 `json:"marginDecayRate"`
+
+	// player performance curve
+	StarPointsBase       float64 `json:"starPointsBase"`
+	StarPointsMultiplier float64 `json:"starPointsMultiplier"`
+
+	// event stakes
+	OvertimeBonus         float64 `json:"overtimeBonus"`
+	EliminationBonus      float64 `json:"eliminationBonus"`
+	Game7Bonus            float64 `json:"game7Bonus"`
+	SeasonSeriesTiedBonus float64 `json:"seasonSeriesTiedBonus"`
+	StarDuelBonus         float64 `json:"starDuelBonus"`
+
+	// ui tagging flags
+	ShootoutThreshold int     `json:"shootoutThreshold"`
+	GrittyThreshold   int     `json:"grittyThreshold"`
 	ComebackThreshold float64 `json:"comebackThreshold"`
 	MaxScore          float64 `json:"maxScore"`
 
-	PlayInBonus           int `json:"playInBonus"`
-	SeasonSeriesTiedBonus int `json:"seasonSeriesTiedBonus"`
+	ProbFlipWeight    float64 `json:"ProbFlipWeight"`
+	StolenGameMaxLead float64 `json:"stolenGameMaxLead"`
+	StolenGameWeight  float64 `json:"stolenGameWeight"`
 }
 
 func (c *GameQualityConfig) Scan(value interface{}) error {

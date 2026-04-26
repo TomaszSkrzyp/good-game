@@ -37,7 +37,7 @@ const ReactionItem: Component<ReactionProps> = (props) => {
       <div class="text-right">
         <span class="text-xs text-gray-400 block mb-1">Your Rating</span>
         <div class="bg-white border px-3 py-1 rounded-full font-bold text-blue-700 shadow-sm">
-          {props.reaction.rating} / 5
+          {props.reaction.rating} / 10
         </div>
       </div>
     </div>

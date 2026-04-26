@@ -25,8 +25,8 @@ func CreateUserReaction(w http.ResponseWriter, r *http.Request, repo *db.UserRea
 
 	ur.UserID = userID
 
-	if ur.Rating < 1 || ur.Rating > 5 {
-		ErrorResponse(w, http.StatusBadRequest, "rating must be between 1 and 5")
+	if ur.Rating < 1 || ur.Rating > 10 {
+		ErrorResponse(w, http.StatusBadRequest, "rating must be between 1 and 10")
 		return
 	}
 

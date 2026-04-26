@@ -215,7 +215,7 @@ const GameItem: Component<GameItemProps> = (props) => {
 
           <Show when={auth.isLoggedIn} fallback={<span class="text-[9px] text-gray-400 italic">Sign in to rate</span>}>
             <div class="flex gap-1">
-              <For each={[1, 2, 3, 4, 5]}>{(v) => {
+              <For each={[1,2,3,4,5,6,7,8,9,10]}>{(v) => {
                 const isSelected = () => (props.game.rating ?? 0) === v;
                 return (
                   <button onClick={() => handleStarClick(v)} class={`w-8 h-8 rounded text-xs font-bold border cursor-pointer transition-colors ${isSelected() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-400 border-gray-200 hover:border-blue-300'}`}>{v}</button>

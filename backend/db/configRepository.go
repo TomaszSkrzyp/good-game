@@ -83,8 +83,8 @@ var defaultGameConfig = models.GameQualityConfig{
 	SeasonSeriesTiedBonus: 3.0,
 	StarDuelBonus:         5.0,
 
-	ShootoutThreshold: 240,
-	GrittyThreshold:   185,
+	ShootoutThreshold: 260,
+	GrittyThreshold:   190,
 	MaxScore:          100.0,
 
 	ProbFlipWeight:    0.5,

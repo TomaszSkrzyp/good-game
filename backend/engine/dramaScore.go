@@ -31,6 +31,7 @@ type WinProbabilityData struct {
 
 type DramaContext struct {
 	DramaScore     float64
+	IsClutchEnding bool
 	IsHugeComeback bool
 	IsElimination  bool
 	IsGame7        bool
@@ -115,12 +116,24 @@ func FetchAndCalculateDrama(eventID string) (DramaContext, error) {
 	if len(probs) >= 2 {
 		var totalVolatility float64
 		var probFlips int
+		var lateFlips int
+		var lateTensionTicks int
 		var sumProb float64
 		minProb, maxProb := 1.0, 0.0
+
+		// Check the last 10% of the game for late-game flips and tension
+		clutchThreshold := int(float64(len(probs)) * 0.9)
+		finalTicks := len(probs) - clutchThreshold
 
 		for i := 0; i < len(probs); i++ {
 			p := probs[i].HomeWinPercentage
 			sumProb += p
+
+			if i >= clutchThreshold {
+				if p >= 0.40 && p <= 0.60 {
+					lateTensionTicks++
+				}
+			}
 
 			if p < minProb {
 				minProb = p
@@ -135,6 +148,9 @@ func FetchAndCalculateDrama(eventID string) (DramaContext, error) {
 
 				if (prevP > 0.5 && p < 0.5) || (prevP < 0.5 && p > 0.5) {
 					probFlips++
+					if i >= clutchThreshold {
+						lateFlips++
+					}
 				}
 			}
 		}
@@ -169,6 +185,8 @@ func FetchAndCalculateDrama(eventID string) (DramaContext, error) {
 		ctx.DramaScore += (totalVolatility * cfg.VolatilityWeight) +
 			(totalSwing * cfg.SwingWeight) +
 			probFlipBonus
+		isTenseEnding := finalTicks > 0 && (float64(lateTensionTicks)/float64(finalTicks)) >= 0.30
+		ctx.IsClutchEnding = lateFlips > 0 || isTenseEnding
 
 		var winnerLeadPct float64
 		winnerLeadPct = -1.0

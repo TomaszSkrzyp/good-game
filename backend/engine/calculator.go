@@ -33,9 +33,9 @@ func CalculateFinalQuality(
 		hRunning += hQs[i]
 		aRunning += aQs[i]
 	}
-	thirdQtrMargin := int(math.Abs(float64(hRunning - aRunning)))
 
-	if thirdQtrMargin <= 8 || margin <= 3 {
+	// Clutch requires late-game volatility (lead change in final 10% of game)
+	if dramaContext.IsClutchEnding {
 		quality.IsClutch = true
 	}
 

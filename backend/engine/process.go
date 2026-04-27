@@ -55,10 +55,15 @@ func saveESPNGame(gormDB *gorm.DB, event ESPNEvent) {
 	}
 
 	getAbbrID := func(abbr string) uint {
-		if strings.Contains(abbr, "/") {
+		if abbr == "" || strings.Contains(abbr, "/") || abbr == "TBD" {
 			return db.TeamAbbrToIDMap["TBD"]
 		}
-		return db.TeamAbbrToIDMap[abbr]
+		id, ok := db.TeamAbbrToIDMap[abbr]
+		if !ok {
+			log.Printf("Warning: Team abbreviation %s not found in map", abbr)
+			return 0
+		}
+		return id
 	}
 
 	homeID := getAbbrID(home.Team.Abbreviation)

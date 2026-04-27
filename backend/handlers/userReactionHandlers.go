@@ -116,7 +116,12 @@ func UpdateUserReaction(w http.ResponseWriter, r *http.Request, repo *db.UserRea
 		return
 	}
 
-	JSONResponse(w, http.StatusOK, ur)
+	avg, count, _ := repo.GetStatsForGame(r.Context(), ur.GameID)
+	JSONResponse(w, http.StatusOK, map[string]interface{}{
+		"rating":      ur.Rating,
+		"avgRating":   avg,
+		"ratingCount": count,
+	})
 }
 
 func DeleteUserReaction(w http.ResponseWriter, r *http.Request, repo *db.UserReactionRepository) {
@@ -144,12 +149,17 @@ func DeleteUserReaction(w http.ResponseWriter, r *http.Request, repo *db.UserRea
 		return
 	}
 
+	gameID := existing.GameID
 	if err := repo.Delete(r.Context(), uint(parsed)); err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, "failed to delete reaction")
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	avg, count, _ := repo.GetStatsForGame(r.Context(), gameID)
+	JSONResponse(w, http.StatusOK, map[string]interface{}{
+		"avgRating":   avg,
+		"ratingCount": count,
+	})
 }
 
 func FilterUserReactions(w http.ResponseWriter, r *http.Request, repo *db.UserReactionRepository) {

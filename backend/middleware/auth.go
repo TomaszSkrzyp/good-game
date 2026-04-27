@@ -153,6 +153,7 @@ func EnableCORS(next http.Handler) http.Handler {
 		origin := os.Getenv("ALLOWED_ORIGIN")
 		if origin == "" {
 			origin = "http://localhost:5173"
+			log.Println("Warning: ALLOWED_ORIGIN not set, falling back to", origin)
 		}
 		w.Header().Set("Access-Control-Allow-Origin", origin)
 		w.Header().Set("Access-Control-Allow-Credentials", "true")

@@ -9,19 +9,22 @@ import (
 )
 
 func NewRouter(db *gorm.DB) http.Handler {
-	mux := http.NewServeMux()
+	mainMux := http.NewServeMux()
+	apiMux := http.NewServeMux()
 
-	RegisterAuthRoutes(mux, db)
-	RegisterGameRoutes(mux, db)
-	RegisterTeamRoutes(mux, db)
-	RegisterConferenceRoutes(mux, db)
-	RegisterTeamStatsRoutes(mux, db)
-	RegisterUserReactionRoutes(mux, db)
-	RegisterConfigRoutes(mux, db)
+	RegisterAuthRoutes(apiMux, db)
+	RegisterGameRoutes(apiMux, db)
+	RegisterTeamRoutes(apiMux, db)
+	RegisterConferenceRoutes(apiMux, db)
+	RegisterTeamStatsRoutes(apiMux, db)
+	RegisterUserReactionRoutes(apiMux, db)
+	RegisterConfigRoutes(apiMux, db)
 
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	apiMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		handlers.JSONResponse(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
 
-	return middleware.EnableCORS(mux)
+	mainMux.Handle("/api/", http.StripPrefix("/api", apiMux))
+
+	return middleware.EnableCORS(mainMux)
 }

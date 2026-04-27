@@ -102,7 +102,12 @@ func RefreshHandler(w http.ResponseWriter, r *http.Request, us *services.UserSer
 		return
 	}
 
-	userID := uint(claims["id"].(float64))
+	idVal, ok := claims["id"].(float64)
+	if !ok {
+		ErrorResponse(w, http.StatusUnauthorized, "Invalid token claims")
+		return
+	}
+	userID := uint(idVal)
 	user, err := us.GetUserByID(r.Context(), userID)
 	if err != nil {
 		ErrorResponse(w, http.StatusUnauthorized, "User session no longer valid")

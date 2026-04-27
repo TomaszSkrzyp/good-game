@@ -111,17 +111,20 @@ func OptionalAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		authHeader := r.Header.Get("Authorization")
 		if strings.HasPrefix(authHeader, "Bearer ") {
 			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-			if claims, err := ValidateToken(tokenString); err == nil {
-				ctx := r.Context()
-				if userID, ok := claims["id"].(float64); ok {
-					ctx = context.WithValue(r.Context(), UserIDKey, uint(userID))
-
-				}
-				if role, ok := claims["role"].(string); ok {
-					ctx = context.WithValue(ctx, UserRoleKey, role)
-				}
-				r = r.WithContext(ctx)
+			claims, err := ValidateToken(tokenString)
+			if err != nil {
+				http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
+				return
 			}
+
+			ctx := r.Context()
+			if userID, ok := claims["id"].(float64); ok {
+				ctx = context.WithValue(r.Context(), UserIDKey, uint(userID))
+			}
+			if role, ok := claims["role"].(string); ok {
+				ctx = context.WithValue(ctx, UserRoleKey, role)
+			}
+			r = r.WithContext(ctx)
 		}
 		next(w, r)
 	}

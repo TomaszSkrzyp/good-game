@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"net/http"
 	"strconv"
 	"strings"
 
@@ -41,7 +40,7 @@ type DramaContext struct {
 
 func FetchAndCalculateDrama(eventID string) (DramaContext, error) {
 	url := fmt.Sprintf("http://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=%s", eventID)
-	resp, err := http.Get(url)
+	resp, err := espnClient.Get(url)
 	if err != nil {
 		return DramaContext{}, err
 	}
@@ -84,10 +83,13 @@ func FetchAndCalculateDrama(eventID string) (DramaContext, error) {
 				winA, _ := strconv.Atoi(scores[0])
 				winB, _ := strconv.Atoi(scores[1])
 
-				if winA == 3 && winB == 3 {
+				// Game 7 and Elimination bonuses are additive
+				if (winA == 3 && winB == 3) || (winA+winB == 7) {
 					ctx.IsGame7 = true
+					ctx.IsElimination = true
 					ctx.DramaScore += cfg.Game7Bonus
-				} else if winA == 3 || winB == 3 {
+					ctx.DramaScore += cfg.EliminationBonus
+				} else if winA == 3 || winB == 3 || winA == 4 || winB == 4 {
 					ctx.IsElimination = true
 					ctx.DramaScore += cfg.EliminationBonus
 				} else if series.Type == "play-in" {

@@ -10,6 +10,10 @@ import (
 	"gorm.io/gorm"
 )
 
+var espnClient = &http.Client{
+	Timeout: 10 * time.Second,
+}
+
 // FetchFullSeason requests data in 7-day ranges to minimize API calls
 func FetchFullSeason(gormDB *gorm.DB, year int) error {
 	log.Printf("Initiating full season sync for year %d", year)
@@ -39,7 +43,7 @@ func FetchFullSeason(gormDB *gorm.DB, year int) error {
 func FetchGamesByDate(gormDB *gorm.DB, dates string) error {
 	url := fmt.Sprintf("http://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=%s", dates)
 
-	resp, err := http.Get(url)
+	resp, err := espnClient.Get(url)
 	if err != nil {
 		return fmt.Errorf("network error: %w", err)
 	}

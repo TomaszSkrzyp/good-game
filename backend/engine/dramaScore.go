@@ -115,7 +115,7 @@ func FetchAndCalculateDrama(eventID string) (DramaContext, error) {
 	if len(probs) >= 2 {
 		var totalVolatility float64
 		var probFlips int
-		var sumProb float64 // Track the sum for the average
+		var sumProb float64
 		minProb, maxProb := 1.0, 0.0
 
 		for i := 0; i < len(probs); i++ {

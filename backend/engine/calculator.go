@@ -24,7 +24,7 @@ func CalculateFinalQuality(
 
 	cfg := models.GetConfig()
 
-	// continuous margin score, 0 if blowout
+	// 0 if blowout
 	margin := math.Abs(float64(hScore - aScore))
 	score += math.Max(0, cfg.MaxMarginBonus-(margin*cfg.MarginDecayRate))
 
@@ -86,7 +86,7 @@ func CalculateFinalQuality(
 	processLeaders(homeLeaders, true)
 	processLeaders(awayLeaders, false)
 
-	// linear scale for individual brilliance
+	// linear scale for star performances
 	score += math.Max(0, (highestScorer-cfg.StarPointsBase)*cfg.StarPointsMultiplier)
 
 	if homeHasStar && awayHasStar {
@@ -101,7 +101,7 @@ func CalculateFinalQuality(
 		}
 	}
 
-	// keep score within logical bounds
+	// cap final score
 	if score > cfg.MaxScore {
 		score = cfg.MaxScore
 	}

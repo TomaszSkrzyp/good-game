@@ -24,13 +24,11 @@ var JwtKey []byte
 func init() {
 	secret := os.Getenv("JWT_KEY")
 	if secret == "" {
-		// crash the server immediately if the secret is missing
 		log.Fatal("CRITICAL SECURITY ERROR: JWT_KEY environment variable is not set. Refusing to start.")
 	}
 	JwtKey = []byte(secret)
 }
 
-// create jwt with exp
 func GenerateToken(userID uint, username string, role string, duration time.Duration) (string, error) {
 	claims := jwt.MapClaims{
 		"id":   userID,
@@ -42,7 +40,6 @@ func GenerateToken(userID uint, username string, role string, duration time.Dura
 	return token.SignedString(JwtKey)
 }
 
-// check if token is valid
 func ValidateToken(tokenString string) (jwt.MapClaims, error) {
 	claims := jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
@@ -59,7 +56,6 @@ func ValidateToken(tokenString string) (jwt.MapClaims, error) {
 	return claims, nil
 }
 
-// helper to get id from context
 func GetUserIDFromContext(r *http.Request) uint {
 	val := r.Context().Value(UserIDKey)
 	if val == nil {
@@ -71,7 +67,6 @@ func GetUserIDFromContext(r *http.Request) uint {
 	return 0
 }
 
-// strict auth - returns 401 if no token
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -130,7 +125,6 @@ func OptionalAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// catch panics so server doesn't die
 func Recovery(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
@@ -147,7 +141,6 @@ func Recovery(next http.Handler) http.Handler {
 	})
 }
 
-// cors setup for dev/prod
 func EnableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := os.Getenv("ALLOWED_ORIGIN")

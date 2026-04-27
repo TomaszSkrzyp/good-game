@@ -14,6 +14,11 @@ type WinProbabilityData struct {
 	WinProbability []struct {
 		HomeWinPercentage float64 `json:"homeWinPercentage"`
 	} `json:"winprobability"`
+	Header struct {
+		Season struct {
+			Type int `json:"type"`
+		} `json:"season"`
+	} `json:"header"`
 	SeasonSeries []struct {
 		Type        string `json:"type"`
 		SeriesScore string `json:"seriesScore"`
@@ -71,7 +76,8 @@ func FetchAndCalculateDrama(eventID string) (DramaContext, error) {
 		}
 	}
 	for _, series := range data.SeasonSeries {
-		if series.Type == "playoff" || series.Type == "play-in" {
+		isPostseason := data.Header.Season.Type == 3
+		if (series.Type == "playoff" || series.Type == "play-in") && isPostseason {
 			if series.Type == "playoff" {
 				ctx.IsPlayoff = true
 			}

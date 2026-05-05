@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/tomaszSkrzyp/good-game/models"
 	"gorm.io/gorm"
 )
 
@@ -54,8 +55,41 @@ func FetchGamesByDate(gormDB *gorm.DB, dates string) error {
 		return fmt.Errorf("json decode error: %w", err)
 	}
 	log.Printf("Fetched %d events for date(s) %s", len(apiRes.Events), dates)
+	activeIDs := make([]string, 0, len(apiRes.Events))
 	for _, event := range apiRes.Events {
+		activeIDs = append(activeIDs, event.ID)
+		log.Print(apiRes.Events)
 		saveESPNGame(gormDB, event)
 	}
+
+	if err := cleanUpGhostGames(gormDB, activeIDs, dates); err != nil {
+		log.Printf("Warning: ghost game cleanup failed: %v", err)
+	}
 	return nil
+}
+func cleanUpGhostGames(db *gorm.DB, activeIDs []string, dates string) error {
+	var start, end time.Time
+
+	if len(dates) == 17 {
+		start, _ = time.Parse("20060102", dates[:8])
+		end, _ = time.Parse("20060102", dates[9:])
+	} else if len(dates) == 8 {
+		start, _ = time.Parse("20060102", dates)
+		end = start
+	} else {
+		return nil
+	}
+
+	end = end.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
+	now := time.Now()
+	result := db.Where("game_time BETWEEN ? AND ?", start, end).
+		Where("id NOT IN ?", activeIDs).
+		Where("status != ?", "STATUS_FINAL").
+		Where("game_time < ?", now.Add(1*time.Hour)).
+		Delete(&models.Game{})
+	if result.RowsAffected > 0 {
+		log.Printf("Canceled %d ghost games (series ended) for range %s", result.RowsAffected, dates)
+	}
+
+	return result.Error
 }
